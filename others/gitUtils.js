@@ -5,7 +5,7 @@ const logger = require("log4js").getLogger();
 async function cloneOrPullRepo() {
     const { git } = require("../index");
     try {
-        const { repoUrl } = require("../config.json");
+        const { githubOwner, githubRepo } = require("../config.json");
         const localRepoPath = path.resolve(__dirname, `../data/repo/`);
 
         if (!fs.existsSync(localRepoPath)) {
@@ -13,7 +13,7 @@ async function cloneOrPullRepo() {
                 "Git - " +
                     "Cloning the repository for the first time, this may take a while..."
             );
-            await git.clone(repoUrl, localRepoPath);
+            await git.clone(`https://github.com/${githubOwner}/${githubRepo}.git`, localRepoPath);
         } else {
             await git.cwd(localRepoPath).pull();
         }

@@ -12,7 +12,7 @@
     "scheduleCacheUpdate": "30 * * * *",
     "scheduleChangelog": "00 22 * * *",
 
-    "githubOwner": "The-Layout-LIst",
+    "githubOwner": "The-Layout-List",
     "githubRepo": "website",
     "githubDataPath": "data",
     "githubBranch": "main",
