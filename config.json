@@ -12,8 +12,8 @@
     "scheduleCacheUpdate": "30 * * * *",
     "scheduleChangelog": "00 22 * * *",
 
-    "githubOwner": "layout-list",
-    "githubRepo": "layout-list",
+    "githubOwner": "The-Layout-LIst",
+    "githubRepo": "website",
     "githubDataPath": "data",
     "githubBranch": "main",
 
