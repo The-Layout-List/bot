@@ -24,7 +24,7 @@
         "node-cron": "^4.2.1",
         "node-fetch": "^3.3.2",
         "pako": "^2.1.0",
-        "prettier": "^3.7.3",
+        "prettier": "^3.8.1",
         "sequelize": "^6.37.7",
         "simple-git": "^3.30.0",
         "sqlite3": "^5.1.7"
