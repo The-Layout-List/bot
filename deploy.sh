@@ -5,4 +5,4 @@ set -o nounset   # abort on unbound variable
 set -o pipefail  # don't hide errors within pipes
 
 git pull
-pm2 restart 0
+pm2 restart bot
