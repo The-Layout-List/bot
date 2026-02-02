@@ -206,8 +206,9 @@ module.exports = {
 
                 await channel.setName(`${level.levelname} (REJECTED)`);
 
-                await channel.setArchived(true);
                 await channel.setLocked(true);
+                await channel.setArchived(true);
+                
             });
 
             await db.levelsInVoting.destroy({

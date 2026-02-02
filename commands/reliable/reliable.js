@@ -364,8 +364,8 @@ module.exports = {
                 flags: MessageFlags.Ephemeral,
             });
             if (command === "reject") {
-                interaction.channel.setArchived(true);
                 interaction.channel.setLocked(true);
+                interaction.channel.setArchived(true);
             }
 
             await db.levelsInVoting.destroy({
