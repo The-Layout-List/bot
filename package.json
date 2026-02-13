@@ -12,7 +12,7 @@
     "author": "Minebox260",
     "license": "ISC",
     "dependencies": {
-        "@napi-rs/canvas": "^0.1.88",
+        "@napi-rs/canvas": "^0.1.92",
         "@octokit/rest": "20.1.2",
         "chartjs-node-canvas": "^5.0.0",
         "discord.js": "^14.25.1",
