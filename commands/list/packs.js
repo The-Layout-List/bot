@@ -242,6 +242,9 @@ module.exports = {
                     case 11:
                         name = "Impossible Pack";
                         break;
+                    case 12:
+                        name = "Unfathomable Pack";
+                        break;
                 }
             }
             const level1 = interaction.options.getString("level1") || null;

@@ -51,7 +51,8 @@ module.exports = {
                             { name: "Ethereal", value: 8 },
                             { name: "Legendary", value: 9 },
                             { name: "Silent", value: 10 },
-                            { name: "Impossible", value: 11 }
+                            { name: "Impossible", value: 11 },
+                            { name: "Unfathomable", value: 12 },
                         )
                         .setDescription(
                             "The minimum percent players need to get a record on this level"
@@ -181,7 +182,8 @@ module.exports = {
                             { name: "Ethereal", value: 8 },
                             { name: "Legendary", value: 9 },
                             { name: "Silent", value: 10 },
-                            { name: "Impossible", value: 11 }
+                            { name: "Impossible", value: 11 },
+                            { name: "Unfathomable", value: 12 },
                         )
                         .setDescription(
                             "The tier the level is in (1-10, see the list website for details)"

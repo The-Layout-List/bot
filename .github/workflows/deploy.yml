@@ -2,9 +2,9 @@ name: Deploy Bot
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - "main"
+  #push:
+  #  branches:
+  #    - "main"
 
 jobs:
   sync_to_backend:
