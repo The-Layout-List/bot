@@ -15,7 +15,7 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Deploy files
-        uses: burnett01/rsync-deployments@6.0.0
+        uses: burnett01/rsync-deployments@v8
         with:
           switches: -avz
           path: ./
