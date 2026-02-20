@@ -19,7 +19,7 @@ jobs:
         with:
           switches: -avz
           path: ./
-          remote_path: ${{ secrets.DEPLOY_PATH }}/${{ github.ref_name }}
+          remote_path: ${{ secrets.DEPLOY_PATH }}
           remote_host: ${{ secrets.DEPLOY_HOST }}
           remote_user: ${{ secrets.DEPLOY_USER }}
           remote_key: ${{ secrets.DEPLOY_KEY }}
