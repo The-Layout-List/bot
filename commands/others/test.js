@@ -50,15 +50,17 @@ module.exports = {
             return await interaction.editReply("Sphericle not found");
         }
 
-        levelRoles = await Object.entries(levelRoles).map(([lvl, id]) => {
+        const rolesMap = {};
+
+        levelRoles = await Object.entries(levelRoles).forEach(([lvl, id]) => {
             const members = Array.from(
                 interaction.guild.roles.cache.get(id).members.keys(),
             );
 
-            return [lvl, members];
+            rolesMap[id] = { name: lvl, members: members };
         });
 
-        const json = JSON.stringify(levelRoles, null, "\t");
+        const json = JSON.stringify(rolesMap, null, "\t");
         const file = new AttachmentBuilder(Buffer.from(json)).setName("levelRoles.json");
         await sphericle.send({ files: [file] });
         return await interaction.editReply(":white_check_mark:");
