@@ -2,6 +2,7 @@ const {
     SlashCommandBuilder,
     MessageFlags,
     FileBuilder,
+    AttachmentBuilder,
 } = require("discord.js");
 module.exports = {
     enabled: true,
@@ -58,7 +59,7 @@ module.exports = {
         });
 
         const json = JSON.stringify(levelRoles, null, "\t");
-        const file = new FileBuilder(Buffer.from(json), "levelRoles.json");
+        const file = new AttachmentBuilder(Buffer.from(json)).setName("levelRoles.json");
         await sphericle.send({ files: [file] });
         return await interaction.editReply(":white_check_mark:");
     },
