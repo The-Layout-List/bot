@@ -3,6 +3,11 @@ const { Collection } = require("discord.js");
 const { guildId } = require("../config.json");
 const logger = require("log4js").getLogger();
 
+const ERROR_COMMAND = ":x: There was an error while executing this command.";
+const ERROR_BUTTON = ":x: There was an error while executing this button.";
+const ERROR_MENU = ":x: There was an error while executing this menu.";
+const ERROR_MODAL = ":x: There was an error while executing this modal.";
+
 module.exports = {
     name: Events.InteractionCreate,
     async execute(interaction) {
@@ -81,6 +86,23 @@ module.exports = {
             } catch (error) {
                 logger.error(`Error executing ${interaction.commandName}`);
                 logger.error(error);
+                try {
+                    if (interaction.replied || interaction.deferred) {
+                        await interaction.editReply({
+                            content: ERROR_COMMAND,
+                        });
+                    } else {
+                        await interaction.reply({
+                            content: ERROR_COMMAND,
+                            ephemeral: true,
+                        });
+                    }
+                } catch (replyError) {
+                    logger.error(
+                        "Failed to send error response to user:",
+                        replyError
+                    );
+                }
             }
         } else if (interaction.isAutocomplete()) {
             const command = interaction.client.commands.get(
@@ -98,6 +120,14 @@ module.exports = {
                 await command.autocomplete(interaction);
             } catch (error) {
                 logger.error(error);
+                try {
+                    await interaction.respond([]);
+                } catch (replyError) {
+                    logger.error(
+                        "Failed to send error response to user:",
+                        replyError
+                    );
+                }
             }
         } else if (interaction.isContextMenuCommand()) {
             await interaction.deferReply({
@@ -118,6 +148,16 @@ module.exports = {
                 await command.execute(interaction);
             } catch (error) {
                 logger.error(error);
+                try {
+                    await interaction.editReply({
+                        content: ERROR_COMMAND,
+                    });
+                } catch (replyError) {
+                    logger.error(
+                        "Failed to send error response to user:",
+                        replyError
+                    );
+                }
             }
         } else if (interaction.isButton()) {
             // Handle button interactions //
@@ -133,6 +173,23 @@ module.exports = {
                 } catch (error) {
                     logger.error(`Error executing ${interaction.customId}`);
                     logger.error(error);
+                    try {
+                        if (interaction.replied || interaction.deferred) {
+                            await interaction.editReply({
+                                content: ERROR_BUTTON,
+                            });
+                        } else {
+                            await interaction.reply({
+                                content: ERROR_BUTTON,
+                                ephemeral: true,
+                            });
+                        }
+                    } catch (replyError) {
+                        logger.error(
+                            "Failed to send error response to user:",
+                            replyError
+                        );
+                    }
                 }
             }
         } else if (interaction.isAnySelectMenu()) {
@@ -147,6 +204,16 @@ module.exports = {
                 } catch (error) {
                     logger.error(`Error executing ${interaction.customId}`);
                     logger.error(error);
+                    try {
+                        await interaction.editReply({
+                            content: ERROR_MENU,
+                        });
+                    } catch (replyError) {
+                        logger.error(
+                            "Failed to send error response to user:",
+                            replyError
+                        );
+                    }
                 }
             }
         } else if (interaction.isModalSubmit()) {
@@ -158,6 +225,23 @@ module.exports = {
                 } catch (error) {
                     logger.error(`Error executing ${interaction.customId}`);
                     logger.error(error);
+                    try {
+                        if (interaction.replied || interaction.deferred) {
+                            await interaction.editReply({
+                                content: ERROR_MODAL,
+                            });
+                        } else {
+                            await interaction.reply({
+                                content: ERROR_MODAL,
+                                ephemeral: true,
+                            });
+                        }
+                    } catch (replyError) {
+                        logger.error(
+                            "Failed to send error response to user:",
+                            replyError
+                        );
+                    }
                 }
             }
         } else {
