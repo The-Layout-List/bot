@@ -1,8 +1,8 @@
 # Layout List Manager
 
-## This is a fork of the [All Rated Extreme Demon List](https://aredl.net)'s bot.
+## This is a fork of the [All Rated Extreme Demon List](https://aredl.net)'s Manager V2 bot.
 
-_The developer of this bot (sphericle) has gotten permission from the AREDL developer team to build and host this._ Most of the hard work has been done by them!
+Credit to the original developers of that bot for doing all the hard work :fire:
 
 ## Original Readme:
 
