@@ -262,10 +262,10 @@ module.exports = {
                 if (!user) {
                     // if this user is not allowed to submit a level
                     if (!hasPerms) {
-                        const arcanePing = "<@437808476106784770>";
+                        const capellaPing = "<@1475663205245259776>";
 
                         return await interaction.editReply(
-                            `:x: You do not have permission to submit levels! Chat in the server for a bit and reach Level 2 (\`/rank\` with ${arcanePing}).`
+                            `:x: You do not have permission to submit levels! Chat in the server for a bit and reach Level 2 (\`/rank\` with ${capellaPing}).`
                         );
                     } else {
                         // if they are new but allowed, add the role
