@@ -89,13 +89,6 @@ module.exports = {
                 )
                 .addStringOption((option) =>
                     option
-                        .setName("showcase")
-                        .setDescription(
-                            "The link to the level's showcase video"
-                        )
-                )
-                .addStringOption((option) =>
-                    option
                         .setName("songname")
                         .setDescription("The name of this level's song")
                         .setRequired(true)
@@ -104,6 +97,13 @@ module.exports = {
                     option
                         .setName("songlink")
                         .setDescription("The NONG link for this level, if any.")
+                )
+                .addStringOption((option) =>
+                    option
+                        .setName("showcase")
+                        .setDescription(
+                            "The link to the level's showcase video"
+                        )
                 )
                 .addStringOption((option) =>
                     option
