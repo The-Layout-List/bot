@@ -89,6 +89,13 @@ module.exports = {
                 )
                 .addStringOption((option) =>
                     option
+                        .setName("showcase")
+                        .setDescription(
+                            "The link to the level's showcase video"
+                        )
+                )
+                .addStringOption((option) =>
+                    option
                         .setName("songname")
                         .setDescription("The name of this level's song")
                         .setRequired(true)
@@ -204,6 +211,13 @@ module.exports = {
                         .setName("verification")
                         .setDescription(
                             "The link to the level's verification video"
+                        )
+                )
+                .addStringOption((option) =>
+                    option
+                        .setName("showcase")
+                        .setDescription(
+                            "The link to the level's showcase video. Set to \"none\" to remove."
                         )
                 )
                 .addStringOption((option) =>
@@ -360,6 +374,7 @@ module.exports = {
             const id = interaction.options.getInteger("id");
             const verifierName = interaction.options.getString("verifier");
             const verification = interaction.options.getString("verification");
+            const showcase = interaction.options.getString("showcase");
             const password =
                 interaction.options.getString("password") == null
                     ? "Free to copy"
@@ -441,6 +456,7 @@ module.exports = {
                 )},\n\t"verifier": "${verifierName}",\n\t"verification": "${verification}",\n\t"percentToQualify": ${percent},\n\t"password": "${password}",\n\t"difficulty": ${difficulty},\n\t"song": "${songName}",` +
                 (songLink !== null ? `\n\t"songLink": "${songLink}",` : "") +
                 (enjoyment !== null ? `\n\t"enjoyment": ${enjoyment},` : "") +
+                (showcase !== null ? `\n\t"showcase": "${showcase}",` : "") +
                 `\n\t"records": []\n}`;
 
             const levelBelow = await cache.levels.findOne({
@@ -534,6 +550,7 @@ module.exports = {
                 interaction.options.getString("verifier") || null;
             const verification =
                 interaction.options.getString("verification") || null;
+            const showcase = interaction.options.getString("showcase") || null;
             const password = interaction.options.getString("password") || null;
             const rawCreators =
                 interaction.options.getString("creators") || null;
@@ -600,6 +617,10 @@ module.exports = {
             if (difficulty !== null) parsedData.difficulty = difficulty;
             if (songName !== null) parsedData.song = songName;
             if (songLink !== null) parsedData.songLink = songLink;
+            if (showcase !== null) {
+                if (showcase.toLowerCase() === "none") parsedData.showcase = null;
+                else parsedData.showcase = showcase;
+            }
             if (enjoyment !== null) parsedData.enjoyment = enjoyment;
 
             let existing = true;
@@ -616,7 +637,8 @@ module.exports = {
                 difficulty !== null ||
                 songName !== null ||
                 songLink !== null ||
-                enjoyment !== null
+                enjoyment !== null ||
+                showcase !== null
             )
                 existing = false;
 
