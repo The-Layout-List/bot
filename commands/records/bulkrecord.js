@@ -329,7 +329,6 @@ module.exports = {
                 },
             });
 
-            // trust me this is a really cool way to do this
             await db.bulkRecordSessions.create({
                 moderatorID: interaction.user.id,
                 playerName: parsedJson.name,

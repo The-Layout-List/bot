@@ -35,6 +35,7 @@ module.exports = {
         });
 
         const changes = [];
+        const errored = [];
 
         const localRepoPath = path.resolve(__dirname, `../data/repo/`);
 
@@ -53,6 +54,8 @@ module.exports = {
                         "Git - " +
                             `Unable to parse data from ${record.path}.json:\n${parseError}`
                     );
+                    errored.push(record.path);
+                    continue;
             }
 
             let recordToAdd = {
@@ -228,7 +231,7 @@ module.exports = {
         if (!(await db.dailyStats.findOne({ where: { date: Date.now() } })))
             db.dailyStats.create({
                 date: Date.now(),
-                nbRecordsAccepted: records.length,
+                nbRecordsAccepted: records.length - errored.length,
                 nbRecordsPending: await db.pendingRecords.count(),
             });
         else
@@ -239,7 +242,7 @@ module.exports = {
                             await db.dailyStats.findOne({
                                 where: { date: Date.now() },
                             })
-                        ).nbRecordsAccepted + records.length,
+                        ).nbRecordsAccepted + records.length - errored.length,
                 },
                 { where: { date: Date.now() } }
             );
@@ -247,6 +250,7 @@ module.exports = {
         const recordEmbeds = [];
 
         for (const record of records) {
+            if (errored.includes(record.path)) continue;
             // Create embed to send in public channel
             let publicEmbed = new EmbedBuilder()
                 .setColor(0x8fce00)
@@ -332,7 +336,12 @@ module.exports = {
             }
         }
 
-        await interaction.editReply(":white_check_mark: Added records!");
+        if (errored.length > 0) {
+            await interaction.editReply(`:white_check_mark: Added records, but some records failed to be added:\n${errored.map((path) => `${path}.json`).join(', ')}`);
+        } else {
+            await interaction.editReply(":white_check_mark: Added records!");
+        }
+        
 
         await db.bulkRecordSessions.destroy({
             where: {
