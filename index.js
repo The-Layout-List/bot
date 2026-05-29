@@ -43,12 +43,18 @@ const sequelize = new Sequelize({
     dialect: "sqlite",
     logging: (msg) => sqlLogger.debug(msg),
     storage: "./data/database.sqlite",
+    define: {
+        freezeTableName: true
+    }
 });
 
 const sequelize_cache = new Sequelize({
     dialect: "sqlite",
     logging: (msg) => sqlLogger.debug(msg),
     storage: "./data/cache.sqlite",
+    define: {
+        freezeTableName: true
+    }
 });
 
 // Establish Github connection
