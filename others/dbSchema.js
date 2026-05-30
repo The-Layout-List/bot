@@ -84,7 +84,7 @@ module.exports = {
             discordid: Sequelize.STRING,
         });
 
-        db.changelog = sequelize.define("changelog", {
+        db.changelog = sequelize.define("changelogs", {
             levelname: Sequelize.STRING,
             old_position: Sequelize.INTEGER,
             new_position: Sequelize.INTEGER,
@@ -117,7 +117,7 @@ module.exports = {
             userdiscordid: Sequelize.STRING,
         });
 
-        db.staffs = sequelize.define("staffs", {
+        db.staffs = sequelize.define("staff", {
             moderator: Sequelize.STRING,
             nbRecords: Sequelize.INTEGER,
             nbAccepted: Sequelize.INTEGER,
@@ -230,7 +230,7 @@ module.exports = {
             },
         });
 
-        db.feedbackMsg = sequelize.define("feedbackMsg", {
+        db.feedbackMsg = sequelize.define("feedbackMsgs", {
             feedbackId: {
                 type: Sequelize.STRING,
                 unique: true,
