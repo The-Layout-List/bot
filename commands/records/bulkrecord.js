@@ -18,8 +18,7 @@ function decompressData(compressedData) {
     return JSON.parse(decompressed);
 }
 
-async function buildEmbed(moderatorID, page) {
-    if (!page) page = 0;
+async function buildEmbed(moderatorID, page = 1) {
     const { db } = await require("../../index.js");
 
     const session = await db.bulkRecordSessions.findOne({
@@ -55,7 +54,11 @@ async function buildEmbed(moderatorID, page) {
             }`
         );
 
-    for (const record of records.slice(page * 25, page * 25 + 25)) {
+
+    const pages = Math.ceil(records.length / 25);
+    embed.setFooter({ text: `Page ${page}/${pages}` });
+
+    for (const record of records.slice((page - 1) * 25, (page - 1) * 25 + 25)) {
         let str = `${record.percent}%`;
         if (record.enjoyment !== undefined && record.enjoyment !== null) {
             str += ` - ${record.enjoyment}/10`;
@@ -469,7 +472,7 @@ module.exports = {
         } else if (interaction.options.getSubcommand() === "view") {
             await interaction.deferReply({ ephemeral: true });
 
-            const page = interaction.options.getInteger("page") || 0;
+            const page = interaction.options.getInteger("page") || 1;
 
             const embed = await buildEmbed(interaction.user.id, page);
 
