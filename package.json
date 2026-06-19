@@ -22,7 +22,7 @@
         "log4js": "^6.9.1",
         "node-cron": "^4.2.1",
         "pako": "^2.1.0",
-        "prettier": "^3.8.3",
+        "prettier": "^3.8.4",
         "sequelize": "^6.37.8",
         "simple-git": "^3.36.0",
         "sqlite3": "^6.0.1"
