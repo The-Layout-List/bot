@@ -20,7 +20,7 @@
         "exceljs": "^4.4.0",
         "is-url-http": "^2.3.13",
         "log4js": "^6.9.1",
-        "node-cron": "^4.2.1",
+        "node-cron": "^4.5.0",
         "pako": "^2.1.0",
         "prettier": "^3.8.3",
         "sequelize": "^6.37.8",
