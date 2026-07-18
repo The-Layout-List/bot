@@ -29,6 +29,10 @@ module.exports = {
             await interaction.editReply(":x: Error retrieving member");
             return;
         }
+        if (!interaction.member.permissions.has("BanMembers")) {
+            await interaction.editReply(":x: You do not have permission to ban members.");
+            return;
+        }
         if (!member.bannable) {
             await interaction.editReply(":x: I cannot ban this user");
             return;
