@@ -1,6 +1,7 @@
 const {
     SlashCommandBuilder,
     ChatInputCommandInteraction,
+    ActivityType,
 } = require("discord.js");
 const logger = require("log4js").getLogger();
 module.exports = {
@@ -23,7 +24,7 @@ module.exports = {
                             { name: "Online", value: "online" },
                             { name: "Idle", value: "idle" },
                             { name: "Do Not Disturb", value: "dnd" },
-                        ),
+                        )
                 )
                 .addStringOption((option) =>
                     option
@@ -31,18 +32,18 @@ module.exports = {
                         .setDescription("The activity to set the bot to")
                         .setRequired(true)
                         .addChoices(
-                            { name: "Playing", value: "PLAYING" },
-                            { name: "Streaming", value: "STREAMING" },
-                            { name: "Listening", value: "LISTENING" },
-                            { name: "Watching", value: "WATCHING" },
-                        ),
+                            { name: "Playing", value: "Playing" },
+                            { name: "Streaming", value: "Streaming" },
+                            { name: "Listening", value: "Listening" },
+                            { name: "Watching", value: "Watching" },
+                        )
                 )
                 .addStringOption((option) =>
                     option
                         .setName("text")
                         .setDescription("The text to set the bot's activity to")
-                        .setRequired(true),
-                ),
+                        .setRequired(true)
+                )
         )
         .addSubcommand((subcommand) =>
             subcommand
@@ -63,7 +64,15 @@ module.exports = {
             const text = interaction.options.getString("text");
 
             await interaction.client.user.setStatus(status);
-            await interaction.client.user.setActivity(text, { type: activity });
+            await interaction.client.user.setPresence({
+                activities: [
+                    {
+                        name: text,
+                        type: ActivityType[activity],
+                    },
+                ],
+                status: status,
+            });
             await interaction.editReply(
                 `:white_check_mark: Bot status updated`,
             );
