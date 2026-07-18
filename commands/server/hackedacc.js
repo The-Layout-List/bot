@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, ChatInputCommandInteraction, MessageFlags } = require("discord.js");
+const { SlashCommandBuilder, ChatInputCommandInteraction, MessageFlags, PermissionsBitField } = require("discord.js");
 const logger = require("log4js").getLogger();
 module.exports = {
     enabled: true,
@@ -6,6 +6,7 @@ module.exports = {
     data: new SlashCommandBuilder()
         .setName("hackedacc")
         .setDescription("HACKERS BEGONE")
+        .setDefaultMemberPermissions(PermissionsBitField.Flags.BanMembers)
         .addUserOption((option) =>
             option
                 .setName("hacker")
@@ -29,8 +30,12 @@ module.exports = {
             await interaction.editReply(":x: Error retrieving member");
             return;
         }
-        if (!interaction.member.permissions.has("BanMembers")) {
-            await interaction.editReply(":x: You do not have permission to ban members.");
+        if (member.id === interaction.user.id) {
+            await interaction.editReply(":x: You cannot ban yourself");
+            return;
+        }
+        if (interaction.guild.ownerId === member.id || interaction.member.roles.highest.position <= member.roles.highest.position) {
+            await interaction.editReply(":x: You cannot ban this user");
             return;
         }
         if (!member.bannable) {
