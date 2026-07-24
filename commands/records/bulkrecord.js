@@ -7,6 +7,7 @@ const {
 } = require("discord.js");
 const isUrlHttp = require("is-url-http");
 const pako = require("pako");
+const logger = require("log4js").getLogger();
 
 // Decompressed data passed to the function using Gzip
 function decompressData(compressedData) {
