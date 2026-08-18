@@ -255,6 +255,20 @@ module.exports = {
             path: Sequelize.STRING,
             levelname: Sequelize.STRING,
         });
+
+        db.reliableProfile = sequelize.define("reliableProfile", {
+            discordid: {
+                type: Sequelize.STRING,
+                unique: true,
+            },
+            points: Sequelize.INTEGER,
+            totalPoints: Sequelize.INTEGER,
+            lastVote: Sequelize.DATE,
+            lastPointReset: Sequelize.DATE,
+            totalYeses: Sequelize.INTEGER,
+            totalNos: Sequelize.INTEGER,
+        });
+        
         return db;
     },
 
