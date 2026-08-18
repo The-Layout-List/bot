@@ -15,7 +15,7 @@ function decompressData(compressedData) {
     const charData = Uint8Array.from(binaryString, (char) =>
         char.charCodeAt(0)
     );
-    const decompressed = pako.ungzip(charData, { to: "string" });
+    const decompressed = pako.ungzip(charData, { toText: true });
     return JSON.parse(decompressed);
 }
 
