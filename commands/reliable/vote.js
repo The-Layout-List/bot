@@ -238,9 +238,9 @@ module.exports = {
             const enjoyment = interaction.options.getInteger("enjoyment");
             const note = interaction.options.getString("note");
 
-            if (enjoyment && (enjoyment > 10 || enjoyment < 1))
+            if (enjoyment !== null && (enjoyment > 10 || enjoyment < 0))
                 return await interaction.editReply(
-                    ":x: that is NOT an enjoyment!!!! (1-10)."
+                    ":x: that is NOT an enjoyment!!!! (0-10)."
                 );
 
             const hasPerms =
@@ -314,7 +314,7 @@ module.exports = {
                 (percent ? `\nList percent: ${percent}%` : "") +
                 (password ? `\nPassword: ${password}` : "") +
                 (opinion ? `\nDifficulty opinion: ${opinion}` : "") +
-                (enjoyment ? `\nVerifier's enjoyment: ${enjoyment}/10` : "") +
+                (enjoyment !== null ? `\nVerifier's enjoyment: ${enjoyment}/10` : "") +
                 (nong ? `\nNONG: ${nong.url}` : "") +
                 (note ? `\n\n_Additional notes: ${note}_` : "");
 

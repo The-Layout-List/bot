@@ -438,13 +438,13 @@ module.exports = {
                     ":x: Couldn't add the record: The provided raw footage link is not a valid URL"
                 );
 
-            // Check enjoyment bounds (1-10)
+            // Check enjoyment bounds (0-10)
             await interaction.editReply(
                 "Checking if the enjoyment is valid..."
             );
-            if (enjoyment && (enjoyment < 1 || enjoyment > 10))
+            if (enjoyment !== null && (enjoyment < 0 || enjoyment > 10))
                 return await interaction.editReply(
-                    ":x: Couldn't add the record: Enjoyment rating must be between 1 and 10"
+                    ":x: Couldn't add the record: Enjoyment rating must be between 0 and 10"
                 );
 
             // Check percent bounds (0-100)
@@ -564,7 +564,7 @@ module.exports = {
                     },
                     {
                         name: "Enjoyment",
-                        value: enjoyment ? `${enjoyment}/10` : "None",
+                        value: enjoyment !== null ? `${enjoyment}/10` : "None",
                         inline: true,
                     }
                 )
@@ -824,7 +824,7 @@ module.exports = {
                         hz: record.fps,
                         ...(record.device === "Mobile" && { mobile: true }),
                     };
-                    if (enjoyment) notRawGithubCode.enjoyment = enjoyment;
+                    if (enjoyment !== null && enjoyment !== undefined) notRawGithubCode.enjoyment = enjoyment;
 
                     const rawGithubCode = JSON.stringify(
                         notRawGithubCode,
@@ -908,7 +908,7 @@ module.exports = {
             let newPercent =
                 interaction.options.getInteger("percent") || oldRecord.percent;
             let newEnjoyment =
-                interaction.options.getInteger("enjoyment") ||
+                interaction.options.getInteger("enjoyment") ??
                 oldRecord.enjoyment;
             let newFPS = interaction.options.getString("fps") || oldRecord.fps;
             let newDevice =
@@ -985,9 +985,9 @@ module.exports = {
                 "Checking if the enjoyment is valid..."
             );
 
-            if (newEnjoyment && (newEnjoyment < -1 || newEnjoyment > 10))
+            if (newEnjoyment !== null && newEnjoyment !== undefined && (newEnjoyment < -1 || newEnjoyment > 10))
                 return await interaction.editReply(
-                    ":x: Couldn't add the record: Enjoyment rating must be between 1 and 10"
+                    ":x: Couldn't add the record: Enjoyment rating must be between 0 and 10"
                 );
 
             // Check percent bounds (0-100)
@@ -1378,7 +1378,7 @@ module.exports = {
                         ...(record.device === "Mobile" && { mobile: true }),
                     };
 
-                    if (record.enjoyment)
+                    if (record.enjoyment !== null && record.enjoyment !== undefined)
                         notRawGithubCode.enjoyment = record.enjoyment;
 
                     const rawGithubCode = JSON.stringify(
@@ -2149,7 +2149,7 @@ module.exports = {
             const fps = interaction.options.getInteger("fps") || null;
             const percent = interaction.options.getInteger("percent") || null;
             const enjoyment =
-                interaction.options.getInteger("enjoyment") || null;
+                interaction.options.getInteger("enjoyment") ?? null;
             const video =
                 interaction.options.getString("completionlink") || null;
             const device = interaction.options.getString("device") || null;

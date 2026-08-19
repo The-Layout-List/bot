@@ -226,11 +226,11 @@ module.exports = {
             // Check given level name
             const { cache } = require("../../index.js");
 
-            // Check enjoyment bounds (1-10)
+            // Check enjoyment bounds (0-10)
             const enjoyment = interaction.options.getInteger("enjoyment");
-            if (enjoyment && (enjoyment < 1 || enjoyment > 10))
+            if (enjoyment !== null && (enjoyment < 0 || enjoyment > 10))
                 return await interaction.editReply(
-                    ":x: Couldn't submit the record: Enjoyment rating must be between 1 and 10"
+                    ":x: Couldn't submit the record: Enjoyment rating must be between 0 and 10"
                 );
 
             // Check percent bounds (0-100)
