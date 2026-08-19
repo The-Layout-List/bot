@@ -310,7 +310,7 @@ module.exports = {
                         hz: session.fps,
                         mobile: session.mobile ? true : false,
                     };
-                    if (record.enjoyment)
+                    if (record.enjoyment !== null && record.enjoyment !== undefined)
                         notRawGithubCode.enjoyment = record.enjoyment;
 
                     const rawGithubCode = JSON.stringify(

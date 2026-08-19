@@ -386,16 +386,16 @@ module.exports = {
             const songName = interaction.options.getString("songname");
             const songLink = interaction.options.getString("songlink") || null;
             const enjoyment =
-                interaction.options.getInteger("enjoyment") || null;
+                interaction.options.getInteger("enjoyment") ?? null;
 
             const finalCreators = [];
             for (const creatorName of creatorNames) {
                 finalCreators.push(creatorName.trim()); // lol
             }
 
-            if (enjoyment && (enjoyment < 1 || enjoyment > 10))
+            if (enjoyment !== null && (enjoyment < 0 || enjoyment > 10))
                 return await interaction.editReply(
-                    ":x: Couldn't add the record: Verifier enjoyment rating must be between 1 and 10"
+                    ":x: Couldn't add the record: Verifier enjoyment rating must be between 0 and 10"
                 );
 
             if (percent && (percent < 0 || percent > 100))
@@ -561,7 +561,7 @@ module.exports = {
             const songName = interaction.options.getString("songname") || null;
             const songLink = interaction.options.getString("songlink") || null;
             const enjoyment =
-                interaction.options.getInteger("enjoyment") || null;
+                interaction.options.getInteger("enjoyment") ?? null;
 
             const levelToEdit = await cache.levels.findOne({
                 where: { filename: level },
