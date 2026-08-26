@@ -1,6 +1,5 @@
 const { Events } = require("discord.js");
 const { Collection } = require("discord.js");
-const { guildId } = require("../config.json");
 const logger = require("log4js").getLogger();
 
 const ERROR_COMMAND = ":x: There was an error while executing this command.";
@@ -13,14 +12,6 @@ module.exports = {
     async execute(interaction) {
         if (interaction.isChatInputCommand()) {
             // Chat command //
-
-            if (interaction.guildId !== guildId) {
-                return interaction.reply({
-                    content:
-                        "Hey!!! This bot is for the Layout List discord only, please kick it from this server. No commands will work. Thanks!",
-                    ephemeral: true,
-                });
-            }
 
             // Check command's name
             const command = interaction.client.commands.get(

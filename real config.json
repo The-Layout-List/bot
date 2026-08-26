@@ -1,7 +1,7 @@
 {
     "debug": false,
 
-    "enableSeparateStaffServer": false,
+    "enableSeparateStaffServer": true,
     "enableShifts": false,
     "enablePriorityRole": false,
     "enableWelcomeMessage": true,
@@ -19,7 +19,7 @@
 
     "clientId": "1315066782213738597",
     "guildId": "855211848362098699",
-    "staffGuildId": "1212116091451609088",
+    "staffGuildId": "1541224616469729453",
 
     "priorityRoleID": "1129273868759089242",
     "submissionLockRoleID": "1115681352772235274",

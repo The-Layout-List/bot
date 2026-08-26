@@ -191,11 +191,8 @@ module.exports = {
 
         // Send all messages simultaneously
         const guild = await interaction.client.guilds.fetch(guildId);
-        const staffGuild = enableSeparateStaffServer
-            ? await interaction.client.guilds.fetch(staffGuildId)
-            : guild;
 
-        const recordsChannel = await staffGuild.channels.cache.get(
+        const recordsChannel = await guild.channels.cache.get(
             archiveRecordsID
         );
 

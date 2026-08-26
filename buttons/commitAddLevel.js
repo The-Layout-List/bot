@@ -269,11 +269,8 @@ module.exports = {
                     .setTimestamp();
 
                 const guild = await interaction.client.guilds.fetch(guildId);
-                const staffGuild = enableSeparateStaffServer
-                    ? await interaction.client.guilds.fetch(staffGuildId)
-                    : guild;
 
-                const announcementMsg = await staffGuild.channels.cache
+                const announcementMsg = await guild.channels.cache
                     .get(changelogID)
                     .send({
                         embeds: [publicEmbed],

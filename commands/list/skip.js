@@ -1,5 +1,5 @@
 const { SlashCommandBuilder } = require("discord.js");
-const { feedbackBanID, maxSkipCount } = require("../../config.json");
+const { feedbackBanID, maxSkipCount, guildId } = require("../../config.json");
 const logger = require("log4js").getLogger();
 
 module.exports = {
@@ -35,11 +35,11 @@ module.exports = {
         // TODO: use less db queries
         const { db } = require("../../index.js");
         const focused = interaction.options.getFocused(true);
-        const members = interaction.guild.members.cache;
+        const members = interaction.guilds.cache.get(guildId).members.cache;
         let filtered = await members.filter((member) =>
             member.user.username
                 .toLowerCase()
-                .includes(focused.value.toLowerCase())
+                .includes(focused.value.toLowerCase()),
         );
 
         filtered = await filtered.map(async (member) => {
@@ -63,7 +63,7 @@ module.exports = {
         return await interaction.respond(
             filtered.slice(0, 25).map((user) => {
                 return { name: user.name, value: user.value };
-            })
+            }),
         );
     },
     async execute(interaction) {
@@ -88,9 +88,9 @@ module.exports = {
             let skipper = dbUser.dataValues;
             skipper.count += 1; // local var
 
-            const member = await interaction.guild.members.cache.get(
-                skipper.user
-            );
+            const member = await interaction.guilds.cache
+                .get(guildId)
+                .members.cache.get(skipper.user);
             // ban the user if they at [maxSkipCount] now
             if (skipper.count === maxSkipCount) {
                 if (member) {
@@ -102,19 +102,19 @@ module.exports = {
                         },
                     });
                     return await interaction.editReply(
-                        `${member.user.username} has been banned from feedback.`
+                        `${member.user.username} has been banned from feedback.`,
                     );
                 } else {
                     logger.warn(
-                        `User with ID ${skipper.user} not found in guild`
+                        `User with ID ${skipper.user} not found in guild`,
                     );
                     return await interaction.editReply(
-                        `Count increased to ${maxSkipCount}, but an error occurred while trying to add the feedback ban role.`
+                        `Count increased to ${maxSkipCount}, but an error occurred while trying to add the feedback ban role.`,
                     );
                 }
             }
             return await interaction.editReply(
-                `Count for ${member.user.username} has been increased to ${skipper.count}.`
+                `Count for ${member.user.username} has been increased to ${skipper.count}.`,
             );
         } else if (subcommand === "remove") {
             const username = interaction.options.getString("user");
@@ -133,17 +133,17 @@ module.exports = {
             let skipper = dbUser.dataValues;
             if (skipper.count === 0)
                 return await interaction.editReply(
-                    ":x: Count is already at 0!"
+                    ":x: Count is already at 0!",
                 );
 
             await dbUser.decrement("count"); // value in database
             skipper.count -= 1; // local var
 
-            const member = await interaction.guild.members.cache.get(
-                skipper.user
-            );
+            const member = await interaction.guilds.cache
+                .get(guildId)
+                .members.cache.get(skipper.user);
             return await interaction.editReply(
-                `Count for ${member.user.username} has been decreased to ${skipper.count}.`
+                `Count for ${member.user.username} has been decreased to ${skipper.count}.`,
             );
         }
     },

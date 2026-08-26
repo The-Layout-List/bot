@@ -796,12 +796,9 @@ module.exports = {
 
             // Send all messages simultaneously
             const guild = await interaction.client.guilds.fetch(guildId);
-            const staffGuild = enableSeparateStaffServer
-                ? await interaction.client.guilds.fetch(staffGuildId)
-                : guild;
 
             // staffGuild.channels.cache.get(acceptedRecordsID).send({ content: '', embeds: [acceptEmbed], components: [row] });
-            staffGuild.channels.cache.get(archiveRecordsID).send({
+            guild.channels.cache.get(archiveRecordsID).send({
                 content: userToPing ? `<@${userToPing.id}>` : "",
                 embeds: [publicEmbed],
             });
@@ -1350,12 +1347,9 @@ module.exports = {
 
             // Send all messages simultaneously
             const guild = await interaction.client.guilds.fetch(guildId);
-            const staffGuild = enableSeparateStaffServer
-                ? await interaction.client.guilds.fetch(staffGuildId)
-                : guild;
 
             // staffGuild.channels.cache.get(acceptedRecordsID).send({ content: '', embeds: [acceptEmbed], components: [row] });
-            staffGuild.channels.cache
+            guild.channels.cache
                 .get(archiveRecordsID)
                 .send({ embeds: [publicEmbed] });
 
