@@ -8,16 +8,15 @@ const {
 module.exports = {
     enabled: true,
     data: new ContextMenuCommandBuilder()
-        .setName("Reliable Poll React")
+        .setName("Staff Poll React")
         .setType(ApplicationCommandType.Message),
     async execute(interaction) {
         const message = await interaction.channel.messages.fetch(
             interaction.targetId
         );
 
-        await message.react("⬆️");
-        await message.react("👍");
-        await message.react("⬇️");
+        await message.react("✅");
+        await message.react("❌");
 
         return interaction.editReply("✅");
     },
