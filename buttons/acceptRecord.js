@@ -38,14 +38,6 @@ module.exports = {
             return;
         }
 
-        const shiftsLock = await db.infos.findOne({
-            where: { name: "shifts" },
-        });
-        if (!shiftsLock || shiftsLock.status)
-            return await interaction.editReply(
-                ":x: The bot is currently assigning shifts, please wait a few minutes before checking records."
-            );
-
         const { cache } = require("../index.js");
 
         // Get cached user

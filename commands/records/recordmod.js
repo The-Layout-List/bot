@@ -297,8 +297,8 @@ module.exports = {
         )
         .addSubcommand((subcommand) =>
             subcommand
-                .setName("shift")
-                .setDescription("Shift the order of a record on a level")
+                .setName("move")
+                .setDescription("Move a record up or down in the level order")
                 .addStringOption((option) =>
                     option
                         .setName("levelname")
@@ -525,14 +525,6 @@ module.exports = {
                     }
                 }
             }
-
-            const shiftsLock = await db.infos.findOne({
-                where: { name: "shifts" },
-            });
-            if (!shiftsLock || shiftsLock.status)
-                return await interaction.editReply(
-                    ":x: The bot is currently assigning shifts, please wait a few minutes before checking records."
-                );
 
             await interaction.editReply(`Writing code...`);
 
@@ -996,14 +988,6 @@ module.exports = {
 
             // Accepting a record //
             await interaction.editReply(`Matched level ${level.filename}`);
-
-            const shiftsLock = await db.infos.findOne({
-                where: { name: "shifts" },
-            });
-            if (!shiftsLock || shiftsLock.status)
-                return await interaction.editReply(
-                    ":x: The bot is currently assigning shifts, please wait a few minutes before checking records."
-                );
 
             // Get cached user
             const user = await cache.users.findOne({
@@ -1694,37 +1678,6 @@ module.exports = {
                 const create = await db.settings.create({
                     moderator: interaction.user.id,
                     sendAcceptedInDM:
-                        interaction.options.getString("status") === "enabled",
-                });
-
-                if (!create)
-                    return await interaction.editReply(
-                        ":x: Something went wrong while executing the command"
-                    );
-            }
-            return await interaction.editReply(
-                `:white_check_mark: Changed setting to ${interaction.options.getString(
-                    "status"
-                )}`
-            );
-        } else if (interaction.options.getSubcommand() === "enablereminder") {
-            await interaction.deferReply({ ephemeral: true });
-
-            const { db } = require("../../index.js");
-
-            // Update sqlite db
-            const update = await db.settings.update(
-                {
-                    shiftReminder:
-                        interaction.options.getString("status") === "enabled",
-                },
-                { where: { moderator: interaction.user.id } }
-            );
-
-            if (!update) {
-                const create = await db.settings.create({
-                    moderator: interaction.user.id,
-                    shiftReminder:
                         interaction.options.getString("status") === "enabled",
                 });
 

@@ -139,11 +139,6 @@ module.exports = {
             },
         });
 
-        db.shifts = sequelize.define("shifts", {
-            moderator: Sequelize.STRING,
-            day: Sequelize.STRING,
-        });
-
         db.dailyStats = sequelize.define("dailyStats", {
             date: Sequelize.DATEONLY,
             nbRecordsSubmitted: { type: Sequelize.NUMBER, defaultValue: 0 },
@@ -157,10 +152,6 @@ module.exports = {
         db.settings = sequelize.define("settings", {
             moderator: Sequelize.STRING,
             sendAcceptedInDM: {
-                type: Sequelize.BOOLEAN,
-                defaultValue: false,
-            },
-            shiftReminder: {
                 type: Sequelize.BOOLEAN,
                 defaultValue: false,
             },

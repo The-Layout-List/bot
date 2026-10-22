@@ -2,13 +2,10 @@
     "debug": false,
 
     "enableSeparateStaffServer": true,
-    "enableShifts": false,
     "enablePriorityRole": false,
     "enableWelcomeMessage": true,
     "enableChangelogMessage": true,
 
-    "scheduleShifts": "10 0 * * *",
-    "scheduleShiftsReminder": "10 22 * * *",
     "scheduleCacheUpdate": "30 * * * *",
     "scheduleChangelog": "00 22 * * *",
 
@@ -36,10 +33,6 @@
     "changelogRoleID": "0",
 
     "guildMemberAddID": "855211848868298795",
-
-    "shiftsReminderID": "1212119449994526801",
-    "shiftsLogsID": "1219796853822849084",
-    "recordsPerWeek": 60,
 
     "submissionResultsID": "884614851790524436",
     "reliableThreadID": "1130258968057487421",

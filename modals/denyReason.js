@@ -35,14 +35,6 @@ module.exports = {
         // Get reason from the text field
         const reason = interaction.fields.getTextInputValue("denyReasonInput");
 
-        const shiftsLock = await db.infos.findOne({
-            where: { name: "shifts" },
-        });
-        if (!shiftsLock || shiftsLock.status)
-            return await interaction.editReply(
-                ":x: The bot is currently assigning shifts, please wait a few minutes before checking records."
-            );
-
         // Add record to denied table
         try {
             await db.deniedRecords.create({
