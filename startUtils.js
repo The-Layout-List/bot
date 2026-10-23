@@ -148,18 +148,6 @@ module.exports = {
                 name: "records",
             });
         }
-        if (!(await db.infos.count({ where: { name: "shifts" } }))) {
-            logger.info("Shifts status not found, creating...");
-            await db.infos.create({
-                status: false,
-                name: "shifts",
-            });
-        } else
-            await db.infos.update(
-                { status: false },
-                { where: { name: "shifts" } }
-            );
-
         if (!(await db.infos.count({ where: { name: "commitdebug" } }))) {
             logger.info("Commit debug status not found, creating");
             await db.infos.create({

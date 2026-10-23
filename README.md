@@ -13,8 +13,7 @@ This repository hosts the code for the discord bot made to help record submissio
 This bot does not provide any hosting, meaning that you will need to find a way to host it yourself.This bot was made with [discord.js](https://discord.js.org/): You will need to have [NodeJS](https://nodejs.org/en) installed (v16.11.0 or higher) to run it. After node has been installed, to install the dependencies, run `npm install` in the bot's root directory
 You will then need to create a config file (an example file is provided in `example_config.json`) and name it `config.json` in the root directory. It should contain the following:
 
-> -   `enableSeparateStaffServer`: Enable this if there is a staff discord server for handling records that is not the public discord server. Will be used to fetch the following channels: `pendingRecordsID`,`priorityRecordsID`,`acceptedRecordsID`,`deniedRecordsID`,`archiveRecordsID`,`shiftsReminderID`,`shiftsLogsID`
-> -   `enableShifts`: Whether or not to enable the shift system. Each day, it assigns records to selected moderators on selected days, depending on how many pending records there are at the moment.
+> -   `enableSeparateStaffServer`: Enable this if there is a staff discord server for handling records that is not the public discord server. Will be used to fetch the following channels: `pendingRecordsID`,`priorityRecordsID`,`acceptedRecordsID`,`deniedRecordsID`,`archiveRecordsID`
 > -   `enablePriorityRole`: Whether or not to enable the priority system. Records from users with a given role will be sent to a separate records channel and should be given priority to.
 > -   `enableWelcomeMessage`: Whether or not to send a message when a user joins the server.
 
@@ -35,10 +34,6 @@ You will then need to create a config file (an example file is provided in `exam
 > -   `acceptedRecordsID`: The channel ID in which, after being accepted, the record info and the moderator who accepted it, will be sent to.
 > -   `deniedRecordsID`: The channel ID in which, after being denied, the record info and the moderator who denied it, along with the deny reason, will be sent to.
 > -   `archiveRecordsID`: The channel ID where both accepted and denied records will be sent to, with more extensive information.
-
-> -   `shiftsReminderID`: If the shift system is enabled, the channel ID in which to send shifts messages pinging moderators with their assigned records.
-> -   `shiftsLogsID`: If the shift system is enabled, the channel ID in which to send shifts messages that logs whoever missed their shift on the previous day, when new shifts are assigned
-> -   `recordsPerWeek`: The target amount of records the bot will try assigning to moderators per week.
 
 > -   `guildMemberAddID`: If welcome messages are enabled, the channel ID in which to send them.
 
