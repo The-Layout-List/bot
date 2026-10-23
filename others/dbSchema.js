@@ -150,7 +150,6 @@ module.exports = {
                 defaultValue: false,
             },
             weekStartedAt: Sequelize.DATE,
-            tag: Sequelize.STRING,
             lastUpdated: Sequelize.DATE,
         });
 

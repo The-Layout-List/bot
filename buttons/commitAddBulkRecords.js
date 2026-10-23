@@ -4,6 +4,7 @@ const {
     githubRepo,
     githubBranch,
     archiveRecordsID,
+    guildId
 } = require("../config.json");
 const { EmbedBuilder } = require("discord.js");
 const logger = require("log4js").getLogger();
@@ -188,9 +189,7 @@ module.exports = {
         );
 
         // Send all messages simultaneously
-        const guild = await interaction.client.guilds.fetch(
-            interaction.guild?.id || "855211848362098699"
-        );
+        const guild = await interaction.client.guilds.fetch(guildId);
 
         const recordsChannel = await guild.channels.cache.get(
             archiveRecordsID

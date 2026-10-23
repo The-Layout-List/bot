@@ -17,6 +17,7 @@ const {
     githubRepo,
     githubDataPath,
     githubBranch,
+    guildId
 } = require("../../config.json");
 const { ChartJSNodeCanvas } = require("chartjs-node-canvas");
 const logger = require("log4js").getLogger();
@@ -786,9 +787,7 @@ module.exports = {
             }
 
             // Send all messages simultaneously
-            const guild = await interaction.client.guilds.fetch(
-                interaction.guild?.id || "855211848362098699"
-            );
+            const guild = await interaction.client.guilds.fetch(guildId);
 
             // staffGuild.channels.cache.get(acceptedRecordsID).send({ content: '', embeds: [acceptEmbed], components: [row] });
             guild.channels.cache.get(archiveRecordsID).send({
@@ -1331,9 +1330,7 @@ module.exports = {
             }
 
             // Send all messages simultaneously
-            const guild = await interaction.client.guilds.fetch(
-                interaction.guild?.id || "855211848362098699"
-            );
+            const guild = await interaction.client.guilds.fetch(guildId);
 
             // staffGuild.channels.cache.get(acceptedRecordsID).send({ content: '', embeds: [acceptEmbed], components: [row] });
             guild.channels.cache

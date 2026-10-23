@@ -1,54 +1,45 @@
-const { guildId, staffRole, staffGuildId, shiftRoleID } = require("../config.json");
+const { Guild } = require("discord.js");
+const { guildId, staffGuildId, hqListStaffRoleId } = require("../config.json");
 
-function getConfiguredStaffRoleId() {
-    return staffRole || shiftRoleID || "1234";
-}
-
-async function getGuildWithRole(client) {
-    const guildIdToUse = client.guilds.cache.has(staffGuildId)
-        ? staffGuildId
-        : guildId;
-    return client.guilds.fetch(guildIdToUse);
-}
-
+/**
+ *
+ * @param {Guild} guild
+ * @returns
+ */
 async function getRoleMembers(guild) {
-    const roleId = getConfiguredStaffRoleId();
-    const role = guild.roles.cache.get(roleId)
-        ? guild.roles.cache.get(roleId)
-        : await guild.roles.fetch(roleId).catch(() => null);
-
+    const role = guild.roles.cache.get(hqListStaffRoleId);
     if (!role) return [];
     return [...role.members.values()].map((member) => member.user.id);
 }
 
+/**
+ *
+ * @param {Guild} guild
+ * @param db
+ * @returns
+ */
 async function getActiveStaffIds(guild, db) {
     const staffIds = await getRoleMembers(guild);
-    const active = [];
 
-    for (const userId of staffIds) {
-        const profile = await db.shiftMembers.findOne({
-            where: { discordid: userId },
-        });
-        if (!profile || !profile.vacationMode) {
-            active.push(userId);
-        }
-    }
+    const dbActiveStaff = await db.shiftMembers.findAll({
+        where: { vacationMode: false },
+        attributes: ["discordid"],
+    });
 
-    return active;
+    return staffIds.filter((id) =>
+        dbActiveStaff.some((staff) => staff.discordid === id),
+    );
 }
 
 async function getGuildStaffCount(client, db) {
-    const guild = await getGuildWithRole(client);
+    const guild = client.guilds.cache.get(staffGuildId ?? guildId);
     return (await getActiveStaffIds(guild, db)).length;
 }
 
-async function ensureShiftMember(db, userId, userTag = null) {
-    let profile = await db.shiftMembers.findOne({
+async function ensureShiftMember(db, userId) {
+    return await db.shiftMembers.findOrCreate({
         where: { discordid: userId },
-    });
-
-    if (!profile) {
-        profile = await db.shiftMembers.create({
+        defaults: {
             discordid: userId,
             currentCount: 0,
             targetCount: 0,
@@ -56,11 +47,8 @@ async function ensureShiftMember(db, userId, userTag = null) {
             reminder5Sent: false,
             reminder6Sent: false,
             weekStartedAt: new Date(),
-            tag: userTag,
-        });
-    }
-
-    return profile;
+        },
+    })[0];
 }
 
 async function setPendingCount(db, count) {
@@ -134,7 +122,10 @@ async function calculateTargetAssignments(db, guild) {
 
 async function resetShiftWeek(db, guild, pendingCount) {
     const state = await db.shiftState.findOne({ where: { id: 1 } });
-    const totalPending = Math.max(0, Number(pendingCount || state?.pendingCount || 0));
+    const totalPending = Math.max(
+        0,
+        Number(pendingCount || state?.pendingCount || 0),
+    );
     const activeStaffIds = await getActiveStaffIds(guild, db);
     const { targetByUser } = await calculateTargetAssignments(db, guild);
     const weekStart = new Date();
@@ -153,7 +144,8 @@ async function resetShiftWeek(db, guild, pendingCount) {
         const isVacation = Boolean(profile.vacationMode);
         const isActive = activeStaffIds.includes(memberId);
         await profile.update({
-            targetCount: isActive && !isVacation ? targetByUser[memberId] || 0 : 0,
+            targetCount:
+                isActive && !isVacation ? targetByUser[memberId] || 0 : 0,
             currentCount: 0,
             weekStartedAt: weekStart,
             reminder5Sent: false,
@@ -191,7 +183,7 @@ async function processShiftReminders(client, db) {
             try {
                 const user = await client.users.fetch(member.discordid);
                 await user.send(
-                    `Reminder: you've only completed ${currentCount}/${targetCount} records for this week's shift. Please complete your remaining records as soon as possible.`
+                    `Reminder: you've only completed ${currentCount}/${targetCount} records for this week's shift. Please complete your remaining records as soon as possible.`,
                 );
                 notifications.push(member.discordid);
                 await member.update({ reminder6Sent: true });
@@ -204,7 +196,7 @@ async function processShiftReminders(client, db) {
             try {
                 const user = await client.users.fetch(member.discordid);
                 await user.send(
-                    `Reminder: your weekly shift is due soon. You have ${currentCount}/${targetCount} records completed so far.`
+                    `Reminder: your weekly shift is due soon. You have ${currentCount}/${targetCount} records completed so far.`,
                 );
                 notifications.push(member.discordid);
                 await member.update({ reminder5Sent: true });
