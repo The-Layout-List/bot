@@ -1,4 +1,3 @@
-const { clientId } = require("../config.json");
 const { processShiftReminders } = require("../others/shiftSystem.js");
 
 module.exports = {

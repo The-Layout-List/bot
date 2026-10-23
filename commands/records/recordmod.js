@@ -12,10 +12,7 @@ const {
     archiveRecordsID,
     priorityRoleID,
     submissionLockRoleID,
-    enableSeparateStaffServer,
     enablePriorityRole,
-    staffGuildId,
-    guildId,
     githubOwner,
     githubRepo,
     githubDataPath,
@@ -24,6 +21,7 @@ const {
 const { ChartJSNodeCanvas } = require("chartjs-node-canvas");
 const logger = require("log4js").getLogger();
 const { octokit } = require("../../index.js");
+const { incrementProgress } = require("../../others/shiftSystem.js");
 const updateData = require("../../scheduled/cacheUpdate.js");
 
 module.exports = {
@@ -606,6 +604,7 @@ module.exports = {
                     moderator: interaction.user.id,
                 });
                 record = recordEntry.dataValues;
+                await incrementProgress(db, interaction.user.id, 1);
             } catch (error) {
                 logger.error(
                     `Error adding the record to the accepted table: ${error}`
@@ -787,7 +786,9 @@ module.exports = {
             }
 
             // Send all messages simultaneously
-            const guild = await interaction.client.guilds.fetch(guildId);
+            const guild = await interaction.client.guilds.fetch(
+                interaction.guild?.id || "855211848362098699"
+            );
 
             // staffGuild.channels.cache.get(acceptedRecordsID).send({ content: '', embeds: [acceptEmbed], components: [row] });
             guild.channels.cache.get(archiveRecordsID).send({
@@ -925,7 +926,7 @@ module.exports = {
                     "none"
                 )
                     newNotes = null;
-                newNotes = interaction.options.getString("notes");
+                else newNotes = interaction.options.getString("notes");
             }
 
             const level = await cache.levels.findOne({
@@ -1330,7 +1331,9 @@ module.exports = {
             }
 
             // Send all messages simultaneously
-            const guild = await interaction.client.guilds.fetch(guildId);
+            const guild = await interaction.client.guilds.fetch(
+                interaction.guild?.id || "855211848362098699"
+            );
 
             // staffGuild.channels.cache.get(acceptedRecordsID).send({ content: '', embeds: [acceptEmbed], components: [row] });
             guild.channels.cache

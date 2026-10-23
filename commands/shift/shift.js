@@ -9,7 +9,6 @@ const {
     setVacationMode,
     setCurrentProgress,
     getCurrentProgress,
-    processShiftReminders,
 } = require("../../others/shiftSystem.js");
 
 function isAdmin(interaction) {
@@ -85,7 +84,7 @@ module.exports = {
                 )
         ),
     async execute(interaction) {
-        const { db, client } = require("../../index.js");
+        const { db } = require("../../index.js");
 
         if (interaction.options.getSubcommand() === "progress") {
             const targetMember =

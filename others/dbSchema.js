@@ -124,6 +124,58 @@ module.exports = {
             nbDenied: Sequelize.INTEGER,
         });
 
+        db.shiftMembers = sequelize.define("shiftMembers", {
+            discordid: {
+                type: Sequelize.STRING,
+                unique: true,
+            },
+            currentCount: {
+                type: Sequelize.INTEGER,
+                defaultValue: 0,
+            },
+            targetCount: {
+                type: Sequelize.INTEGER,
+                defaultValue: 0,
+            },
+            vacationMode: {
+                type: Sequelize.BOOLEAN,
+                defaultValue: false,
+            },
+            reminder5Sent: {
+                type: Sequelize.BOOLEAN,
+                defaultValue: false,
+            },
+            reminder6Sent: {
+                type: Sequelize.BOOLEAN,
+                defaultValue: false,
+            },
+            weekStartedAt: Sequelize.DATE,
+            tag: Sequelize.STRING,
+            lastUpdated: Sequelize.DATE,
+        });
+
+        db.shiftState = sequelize.define("shiftState", {
+            id: {
+                type: Sequelize.INTEGER,
+                primaryKey: true,
+                autoIncrement: false,
+                defaultValue: 1,
+            },
+            pendingCount: {
+                type: Sequelize.INTEGER,
+                defaultValue: 0,
+            },
+            weekStartedAt: Sequelize.DATE,
+            reminder5Sent: {
+                type: Sequelize.BOOLEAN,
+                defaultValue: false,
+            },
+            reminder6Sent: {
+                type: Sequelize.BOOLEAN,
+                defaultValue: false,
+            },
+        });
+
         db.levelStats = sequelize.define("levelStats", {
             submissions: {
                 type: Sequelize.INTEGER,

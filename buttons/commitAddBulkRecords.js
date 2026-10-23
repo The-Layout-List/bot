@@ -3,9 +3,6 @@ const {
     githubOwner,
     githubRepo,
     githubBranch,
-    guildId,
-    enableSeparateStaffServer,
-    staffGuildId,
     archiveRecordsID,
 } = require("../config.json");
 const { EmbedBuilder } = require("discord.js");
@@ -13,6 +10,7 @@ const logger = require("log4js").getLogger();
 const fs = require("fs");
 const path = require("path");
 const { cloneOrPullRepo } = require("../others/gitUtils.js");
+const { incrementProgress } = require("../others/shiftSystem.js");
 
 module.exports = {
     customId: "commitAddBulkRecords",
@@ -190,7 +188,9 @@ module.exports = {
         );
 
         // Send all messages simultaneously
-        const guild = await interaction.client.guilds.fetch(guildId);
+        const guild = await interaction.client.guilds.fetch(
+            interaction.guild?.id || "855211848362098699"
+        );
 
         const recordsChannel = await guild.channels.cache.get(
             archiveRecordsID
@@ -243,6 +243,8 @@ module.exports = {
                 },
                 { where: { date: Date.now() } }
             );
+
+        await incrementProgress(db, interaction.user.id, records.length - errored.length);
 
         const recordEmbeds = [];
 

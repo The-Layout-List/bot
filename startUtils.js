@@ -3,7 +3,6 @@ const path = require("node:path");
 const { Collection } = require("discord.js");
 const cron = require("node-cron");
 const { githubOwner, githubRepo } = require("./config.json");
-const { updateArchivedLevels } = require("./others/cacheUpdate");
 const logger = require("log4js").getLogger();
 
 module.exports = {
@@ -155,12 +154,29 @@ module.exports = {
                 name: "commitdebug",
             });
         }
+        if (!(await db.infos.count({ where: { name: "shifts" } }))) {
+            logger.info("Shift status not found, creating");
+            await db.infos.create({
+                status: false,
+                name: "shifts",
+            });
+        }
         if (!(await db.levelStats.count())) {
             logger.info("Level stats data not found, creating");
             await db.levelStats.create({
                 submissions: 0,
                 accepts: 0,
                 denies: 0,
+            });
+        }
+        if (!(await db.shiftState.count())) {
+            logger.info("Shift state not found, creating");
+            await db.shiftState.create({
+                id: 1,
+                pendingCount: 0,
+                weekStartedAt: new Date(),
+                reminder5Sent: false,
+                reminder6Sent: false,
             });
         }
 
