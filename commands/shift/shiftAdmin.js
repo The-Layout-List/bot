@@ -4,9 +4,14 @@ const {
     resetShiftWeek,
     setVacationMode,
     setCurrentProgress,
+    processShiftReminders,
+    getActiveStaffIds
 } = require("../../others/shiftSystem.js");
+const { Op } = require("sequelize");
+const { staffGuildId, guildId } = require("../../config.json");
 
 module.exports = {
+    enabled: true,
     data: new SlashCommandBuilder()
         .setName("shift-admin")
         .setDescription("Administrative commands for managing the weekly shift")
@@ -66,6 +71,18 @@ module.exports = {
                         .setDescription("Current reviewed count for the week")
                         .setRequired(true)
                 )
+        )
+        .addSubcommand((subcommand) =>
+            subcommand
+                .setName("force-remind")
+                .setDescription("Send shift reminders to all staff members")
+        )
+        .addSubcommand((subcommand) =>
+            subcommand
+                .setName("filter-members")
+                .setDescription(
+                    "Refreshes the list of staff members eligible for shifts"
+                )
         ),
     /**
      *
@@ -76,43 +93,65 @@ module.exports = {
         const { db } = require("../../index.js");
         await interaction.deferReply();
         const subcommand = interaction.options.getSubcommand();
-        switch (subcommand) {
-            case "setpending": {
-                const count = interaction.options.getInteger("count");
-                await setPendingCount(db, count);
-                return interaction.editReply({
-                    content: `Weekly pending count set to ${count}.`,
-                });
-            }
-            case "resetweek": {
-                const state = await db.shiftState.findOne({ where: { id: 1 } });
-                const pending = state?.pendingCount ?? 0;
-                const { pendingCount } = await resetShiftWeek(
-                    db,
-                    interaction.guild,
-                    pending
-                );
-                return interaction.editReply({
-                    content: `Weekly shift reset complete. ${pendingCount} pending records were spread across staff members.`,
-                });
-            }
-            case "vacation": {
-                const member = interaction.options.getUser("member");
-                const enabled = interaction.options.getBoolean("on");
-                await setVacationMode(db, member.id, enabled);
-                return interaction.editReply({
-                    content: `Vacation mode for <@${member.id}> is now ${enabled ? "enabled" : "disabled"}.`,
-                });
-            }
-            case "setcount": {
-                const member = interaction.options.getUser("member");
-                const count = interaction.options.getInteger("count");
-                await setCurrentProgress(db, member.id, count);
-                return interaction.editReply({
-                    content: `Current reviewed total for <@${member.id}> has been set to ${count}.`,
-                    ephemeral: true
-                });
-            }
+        if (subcommand === "setpending") {
+            const count = interaction.options.getInteger("count");
+            await setPendingCount(db, count);
+            return interaction.editReply({
+                content: `Weekly pending count set to ${count}.`
+            });
+        } else if (subcommand === "resetweek") {
+            const state = await db.shiftState.findOne({ where: { id: 1 } });
+            const pending = state?.pendingCount ?? 0;
+            const { pendingCount } = await resetShiftWeek(
+                db,
+                interaction.guild,
+                pending
+            );
+            return interaction.editReply({
+                content: `Weekly shift reset complete. ${pendingCount} pending records were spread across staff members.`
+            });
+        } else if (subcommand === "vacation") {
+            const member = interaction.options.getUser("member");
+            const enabled = interaction.options.getBoolean("on");
+            await setVacationMode(db, member.id, enabled);
+            return await interaction.editReply(
+                `Vacation mode for <@${member.id}> is now ${enabled ? "enabled" : "disabled"}.`
+            );
+        } else if (subcommand === "setcount") {
+            const member = interaction.options.getUser("member");
+            const count = interaction.options.getInteger("count");
+            await setCurrentProgress(db, member.id, count);
+            return interaction.editReply({
+                content: `Current reviewed total for <@${member.id}> has been set to ${count}.`,
+                ephemeral: true
+            });
+        } else if (subcommand === "force-remind") {
+            const notifications = await processShiftReminders(
+                interaction.client,
+                db
+            );
+            return interaction.editReply({
+                content: `Shift reminders sent to ${notifications.length} staff members.`,
+                ephemeral: true
+            });
+        } else if (subcommand === "filter-members") {
+            const deletedCount = await db.shiftMembers.destroy({
+                where: {
+                    discordid: {
+                        [Op.notIn]: await getActiveStaffIds(
+                            interaction.client.guilds.cache.get(
+                                staffGuildId ?? guildId
+                            ),
+                            db
+                        )
+                    }
+                }
+            });
+
+            return interaction.editReply({
+                content: `Staff members eligible for shifts have been refreshed. Removed ${deletedCount} members.`,
+                ephemeral: true
+            });
         }
     }
 };

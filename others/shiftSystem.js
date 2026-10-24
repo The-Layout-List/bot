@@ -1,5 +1,6 @@
 const { Guild } = require("discord.js");
 const { guildId, staffGuildId, hqListStaffRoleId } = require("../config.json");
+const { Sequelize } = require("sequelize");
 
 /**
  *
@@ -23,11 +24,11 @@ async function getActiveStaffIds(guild, db) {
 
     const dbActiveStaff = await db.shiftMembers.findAll({
         where: { vacationMode: false },
-        attributes: ["discordid"],
+        attributes: ["discordid"]
     });
 
     return staffIds.filter((id) =>
-        dbActiveStaff.some((staff) => staff.discordid === id),
+        dbActiveStaff.some((staff) => staff.discordid === id)
     );
 }
 
@@ -37,20 +38,25 @@ async function getGuildStaffCount(client, db) {
 }
 
 async function ensureShiftMember(db, userId) {
-    return await db.shiftMembers.findOrCreate({
-        where: { discordid: userId },
-        defaults: {
-            discordid: userId,
-            currentCount: 0,
-            targetCount: 0,
-            vacationMode: false,
-            reminder5Sent: false,
-            reminder6Sent: false,
-            weekStartedAt: new Date(),
-        },
-    })[0];
+    const profile = await db.shiftMembers.findOne({
+        where: { discordid: userId }
+    });
+    if (profile) return profile;
+
+    return await db.shiftMembers.create({
+        discordid: userId,
+        currentCount: 0,
+        targetCount: 0,
+        vacationMode: false,
+        reminder5Sent: false,
+        reminder6Sent: false,
+        weekStartedAt: new Date()
+    });
 }
 
+function getReminderMessage(completedCount, pendingCount) {
+    return `Reminder: your shift is due soon! You have completed ${completedCount}/${pendingCount} records.`;
+}
 async function setPendingCount(db, count) {
     const pendingCount = Math.max(0, Number(count || 0));
     const state = await db.shiftState.findOne({ where: { id: 1 } });
@@ -63,7 +69,7 @@ async function setPendingCount(db, count) {
         pendingCount,
         weekStartedAt: new Date(),
         reminder5Sent: false,
-        reminder6Sent: false,
+        reminder6Sent: false
     });
 }
 
@@ -83,7 +89,7 @@ async function getCurrentProgress(db, userId) {
         vacationMode: Boolean(profile.vacationMode),
         reminder5Sent: Boolean(profile.reminder5Sent),
         reminder6Sent: Boolean(profile.reminder6Sent),
-        weekStartedAt: profile.weekStartedAt,
+        weekStartedAt: profile.weekStartedAt
     };
 }
 
@@ -92,7 +98,7 @@ async function incrementProgress(db, userId, amount = 1) {
     const increment = Math.max(0, Number(amount || 1));
     await profile.update({
         currentCount: Number(profile.currentCount || 0) + increment,
-        lastUpdated: new Date(),
+        lastUpdated: new Date()
     });
     return profile;
 }
@@ -120,11 +126,18 @@ async function calculateTargetAssignments(db, guild) {
     return { pendingCount, targetByUser };
 }
 
+/**
+ *
+ * @param {*} db
+ * @param {import('discord.js').Guild} guild
+ * @param {number} pendingCount
+ * @returns
+ */
 async function resetShiftWeek(db, guild, pendingCount) {
     const state = await db.shiftState.findOne({ where: { id: 1 } });
     const totalPending = Math.max(
         0,
-        Number(pendingCount || state?.pendingCount || 0),
+        Number(pendingCount || state?.pendingCount || 0)
     );
     const activeStaffIds = await getActiveStaffIds(guild, db);
     const { targetByUser } = await calculateTargetAssignments(db, guild);
@@ -135,29 +148,38 @@ async function resetShiftWeek(db, guild, pendingCount) {
         pendingCount: totalPending,
         weekStartedAt: weekStart,
         reminder5Sent: false,
-        reminder6Sent: false,
+        reminder6Sent: false
     });
 
     const allStaffIds = new Set(await getRoleMembers(guild));
     for (const memberId of allStaffIds) {
-        const profile = await ensureShiftMember(db, memberId);
+        let profile = await ensureShiftMember(db, memberId);
         const isVacation = Boolean(profile.vacationMode);
         const isActive = activeStaffIds.includes(memberId);
-        await profile.update({
+        profile = await profile.update({
             targetCount:
                 isActive && !isVacation ? targetByUser[memberId] || 0 : 0,
             currentCount: 0,
             weekStartedAt: weekStart,
             reminder5Sent: false,
             reminder6Sent: false,
-            vacationMode: isVacation,
+            vacationMode: isVacation
         });
+        if (isVacation) continue;
+        const guildMember = guild.members.cache.get(memberId);
+        if (guildMember) {
+            guildMember.send(
+                `Your shift for this week has started! Please do ${profile.targetCount} records before <t:${Math.floor(weekStart.getTime() / 1000) + 7 * 86400}:f>`
+            );
+        } else {
+            console.error(`Failed to fetch guild member with id ${memberId}`);
+        }
     }
 
     return {
         pendingCount: totalPending,
         weekStart,
-        targetByUser,
+        targetByUser
     };
 }
 
@@ -168,38 +190,41 @@ async function processShiftReminders(client, db) {
     const weekStart = new Date(state.weekStartedAt);
     const now = new Date();
     const notifications = [];
-    const members = await db.shiftMembers.findAll({
-        where: { vacationMode: false },
+    let members = await db.shiftMembers.findAll({
+        where: {
+            discordid: await getActiveStaffIds(
+                client.guilds.cache.get(staffGuildId ?? guildId),
+                db
+            ),
+            vacationMode: false,
+            targetCount: { [Sequelize.Op.gt]: 0 },
+            currentCount: {
+                [Sequelize.Op.lt]: Sequelize.col("targetCount")
+            }
+        }
     });
 
     for (const member of members) {
         if (!member.discordid) continue;
         const currentCount = Number(member.currentCount || 0);
         const targetCount = Number(member.targetCount || 0);
-        if (targetCount === 0 || currentCount >= targetCount) continue;
 
         const daysSinceStart = (now.getTime() - weekStart.getTime()) / 86400000;
-        if (daysSinceStart >= 6 && !member.reminder6Sent) {
-            try {
-                const user = await client.users.fetch(member.discordid);
-                await user.send(
-                    `Reminder: you've only completed ${currentCount}/${targetCount} records for this week's shift. Please complete your remaining records as soon as possible.`,
-                );
-                notifications.push(member.discordid);
-                await member.update({ reminder6Sent: true });
-            } catch {
-                // Ignore missing/blocked DMs.
-            }
-            continue;
-        }
         if (daysSinceStart >= 5 && !member.reminder5Sent) {
             try {
                 const user = await client.users.fetch(member.discordid);
-                await user.send(
-                    `Reminder: your weekly shift is due soon. You have ${currentCount}/${targetCount} records completed so far.`,
-                );
+                await user.send(getReminderMessage(currentCount, targetCount));
                 notifications.push(member.discordid);
                 await member.update({ reminder5Sent: true });
+            } catch {
+                // Ignore missing/blocked DMs.
+            }
+        } else if (daysSinceStart >= 6 && !member.reminder6Sent) {
+            try {
+                const user = await client.users.fetch(member.discordid);
+                await user.send(getReminderMessage(currentCount, targetCount));
+                notifications.push(member.discordid);
+                await member.update({ reminder6Sent: true });
             } catch {
                 // Ignore missing/blocked DMs.
             }
@@ -210,8 +235,6 @@ async function processShiftReminders(client, db) {
 }
 
 module.exports = {
-    getConfiguredStaffRoleId,
-    getGuildWithRole,
     getActiveStaffIds,
     getGuildStaffCount,
     ensureShiftMember,
@@ -222,5 +245,5 @@ module.exports = {
     setVacationMode,
     calculateTargetAssignments,
     resetShiftWeek,
-    processShiftReminders,
+    processShiftReminders
 };

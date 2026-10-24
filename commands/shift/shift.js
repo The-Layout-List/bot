@@ -28,7 +28,7 @@ module.exports = {
         if (interaction.options.getSubcommand() === "progress") {
             const progress = await getCurrentProgress(db, interaction.user.id);
             return interaction.editReply({
-                content: `Shift progress for <@${targetMember.id}>: ${progress.currentCount}/${progress.targetCount} records completed${progress.vacationMode ? " (vacation mode enabled)" : ""}`
+                content: `Shift progress for <@${interaction.user.id}>: ${progress.currentCount}/${progress.targetCount} records completed${progress.vacationMode ? " (vacation mode enabled)" : ""}`
             });
         }
     }
