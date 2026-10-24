@@ -1,23 +1,8 @@
 const {
     SlashCommandBuilder,
-    PermissionFlagsBits,
-    MessageFlags,
+    MessageFlags
 } = require("discord.js");
-const { adminRole } = require("../../config.json");
-const {
-    setPendingCount,
-    resetShiftWeek,
-    setVacationMode,
-    setCurrentProgress,
-    getCurrentProgress,
-} = require("../../others/shiftSystem.js");
-
-function isAdmin(interaction) {
-    return (
-        interaction.member.permissions.has(PermissionFlagsBits.Administrator) ||
-        interaction.member.roles.cache.has(adminRole)
-    );
-}
+const { getCurrentProgress } = require("../../others/shiftSystem.js");
 
 module.exports = {
     enabled: true,
@@ -27,7 +12,7 @@ module.exports = {
         .addSubcommand((subcommand) =>
             subcommand
                 .setName("progress")
-                .setDescription("Check your shift progress"),
+                .setDescription("Check your shift progress")
         ),
     /**
      *
@@ -37,14 +22,14 @@ module.exports = {
     async execute(interaction) {
         const { db } = require("../../index.js");
         await interaction.deferReply({
-            flags: MessageFlags.Ephemeral,
+            flags: MessageFlags.Ephemeral
         });
 
         if (interaction.options.getSubcommand() === "progress") {
             const progress = await getCurrentProgress(db, interaction.user.id);
             return interaction.editReply({
-                content: `Shift progress for <@${targetMember.id}>: ${progress.currentCount}/${progress.targetCount} records completed${progress.vacationMode ? " (vacation mode enabled)" : ""}`,
+                content: `Shift progress for <@${targetMember.id}>: ${progress.currentCount}/${progress.targetCount} records completed${progress.vacationMode ? " (vacation mode enabled)" : ""}`
             });
         }
-    },
+    }
 };
