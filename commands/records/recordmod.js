@@ -12,18 +12,17 @@ const {
     archiveRecordsID,
     priorityRoleID,
     submissionLockRoleID,
-    enableSeparateStaffServer,
     enablePriorityRole,
-    staffGuildId,
-    guildId,
     githubOwner,
     githubRepo,
     githubDataPath,
     githubBranch,
+    guildId
 } = require("../../config.json");
 const { ChartJSNodeCanvas } = require("chartjs-node-canvas");
 const logger = require("log4js").getLogger();
 const { octokit } = require("../../index.js");
+const { incrementProgress } = require("../../others/shiftSystem.js");
 const updateData = require("../../scheduled/cacheUpdate.js");
 
 module.exports = {
@@ -606,6 +605,7 @@ module.exports = {
                     moderator: interaction.user.id,
                 });
                 record = recordEntry.dataValues;
+                await incrementProgress(db, interaction.user.id, 1);
             } catch (error) {
                 logger.error(
                     `Error adding the record to the accepted table: ${error}`
@@ -925,7 +925,7 @@ module.exports = {
                     "none"
                 )
                     newNotes = null;
-                newNotes = interaction.options.getString("notes");
+                else newNotes = interaction.options.getString("notes");
             }
 
             const level = await cache.levels.findOne({

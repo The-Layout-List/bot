@@ -48,6 +48,3 @@ Now you can run `node ./bot.js` in the root directory, to register the bot's com
 
 You can then run the bot using `node ./index.js`. It will create a SQLite database to store records data (among other things) in a `data/` subfolder
 
-## Usage
-
-## Commands list
