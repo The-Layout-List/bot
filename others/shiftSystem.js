@@ -1,5 +1,10 @@
 const { Guild } = require("discord.js");
-const { guildId, staffGuildId, hqListStaffRoleId } = require("../config.json");
+const {
+    guildId,
+    staffGuildId,
+    hqListStaffRoleId,
+    leaderShiftLogsChannelId
+} = require("../config.json");
 const { Sequelize } = require("sequelize");
 
 /**
@@ -141,6 +146,7 @@ async function resetShiftWeek(db, guild, pendingCount) {
     );
     const activeStaffIds = await getActiveStaffIds(guild, db);
     const { targetByUser } = await calculateTargetAssignments(db, guild);
+    console.log(targetByUser);
     const weekStart = new Date();
 
     await db.shiftState.upsert({
@@ -165,15 +171,6 @@ async function resetShiftWeek(db, guild, pendingCount) {
             reminder6Sent: false,
             vacationMode: isVacation
         });
-        if (isVacation) continue;
-        const guildMember = guild.members.cache.get(memberId);
-        if (guildMember) {
-            guildMember.send(
-                `Your shift for this week has started! Please do ${profile.targetCount} records before <t:${Math.floor(weekStart.getTime() / 1000) + 7 * 86400}:f>`
-            );
-        } else {
-            console.error(`Failed to fetch guild member with id ${memberId}`);
-        }
     }
 
     return {
@@ -234,6 +231,31 @@ async function processShiftReminders(client, db) {
     return notifications;
 }
 
+async function endShiftWeek(client, db) {
+    const uncompletedShifts = await db.shiftMembers.findAll({
+        where: {
+            discordid: await getActiveStaffIds(
+                client.guilds.cache.get(staffGuildId ?? guildId),
+                db
+            ),
+            vacationMode: false,
+            currentCount: {
+                [Sequelize.Op.lt]: Sequelize.col("targetCount")
+            }
+        }
+    });
+
+    const shiftLogsChannel = await client.guilds.cache
+        .get(staffGuildId ?? guildId)
+        .channels.cache.get(leaderShiftLogsChannelId);
+
+    await shiftLogsChannel.send({
+        allowedMentions: { parse: [] },
+        content: `The weekly shift has ended. Uncompleted shifts:${uncompletedShifts.length > 0 ? "\n\n" : " None!"}${uncompletedShifts.map((shift) => `<@${shift.discordid}> - ${shift.currentCount}/${shift.targetCount}`).join("\n")}`
+    });
+    return uncompletedShifts;
+}
+
 module.exports = {
     getActiveStaffIds,
     getGuildStaffCount,
@@ -245,5 +267,6 @@ module.exports = {
     setVacationMode,
     calculateTargetAssignments,
     resetShiftWeek,
-    processShiftReminders
+    processShiftReminders,
+    endShiftWeek
 };

@@ -5,10 +5,15 @@ const {
     setVacationMode,
     setCurrentProgress,
     processShiftReminders,
-    getActiveStaffIds
+    getActiveStaffIds,
+    endShiftWeek
 } = require("../../others/shiftSystem.js");
 const { Op } = require("sequelize");
-const { staffGuildId, guildId } = require("../../config.json");
+const {
+    staffGuildId,
+    guildId,
+    shiftLogsChannelId
+} = require("../../config.json");
 
 module.exports = {
     enabled: true,
@@ -100,13 +105,37 @@ module.exports = {
                 content: `Weekly pending count set to ${count}.`
             });
         } else if (subcommand === "resetweek") {
+            await endShiftWeek(interaction.client, db);
+
             const state = await db.shiftState.findOne({ where: { id: 1 } });
             const pending = state?.pendingCount ?? 0;
-            const { pendingCount } = await resetShiftWeek(
+            const { pendingCount, targetByUser } = await resetShiftWeek(
                 db,
                 interaction.guild,
                 pending
             );
+
+            const shiftlogsChannel = interaction.client.guilds.cache
+                .get(staffGuildId ?? guildId)
+                .channels.cache.get(shiftLogsChannelId);
+            if (shiftlogsChannel) {
+                await shiftlogsChannel.send({
+                    content: `New shifts just dropped!!\n\n${Object.entries(
+                        targetByUser
+                    )
+                        .map(
+                            ([userId, count]) =>
+                                `<@${userId}> - **${count} records**`
+                        )
+                        .join("\n")}`,
+                    allowedMentions: {
+                        users: Object.entries(targetByUser)
+                            .filter(([_, count]) => count > 0)
+                            .map(([userId]) => userId)
+                    }
+                });
+            }
+
             return interaction.editReply({
                 content: `Weekly shift reset complete. ${pendingCount} pending records were spread across staff members.`
             });
