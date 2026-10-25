@@ -5,6 +5,7 @@ const {
     ButtonBuilder,
     ButtonStyle,
     ActionRowBuilder,
+    MessageFlags
 } = require("discord.js");
 const Sequelize = require("sequelize");
 const isUrlHttp = require("is-url-http");
@@ -21,7 +22,6 @@ const {
 } = require("../../config.json");
 const { ChartJSNodeCanvas } = require("chartjs-node-canvas");
 const logger = require("log4js").getLogger();
-const { octokit } = require("../../index.js");
 const { incrementProgress } = require("../../others/shiftSystem.js");
 const updateData = require("../../scheduled/cacheUpdate.js");
 
@@ -109,6 +109,45 @@ module.exports = {
                         .setName("notes")
                         .setDescription("Any other info you'd like to share")
                         .setMaxLength(1024)
+                )
+        )
+        .addSubcommand((subcommand) =>
+            subcommand
+                .setName("deny")
+                .setDescription("Denies a record")
+                .addStringOption((option) =>
+                    option
+                        .setName("levelname")
+                        .setDescription(
+                            "Name of the level for which the record is being denied"
+                        )
+                        .setMaxLength(1024)
+                        .setRequired(true)
+                        .setAutocomplete(true)
+                )
+                .addStringOption((option) =>
+                    option
+                        .setName("username")
+                        .setDescription(
+                            "Username of the person whose record is being denied. Shows if no "
+                        )
+                        .setMaxLength(1024)
+                        .setRequired(true)
+                        .setAutocomplete(true)
+                )
+                .addStringOption((option) =>
+                    option
+                        .setName("reason")
+                        .setDescription("Reason for denying the record")
+                        .setMaxLength(1024)
+                        .setRequired(true)
+                )
+                .addUserOption((option) =>
+                    option
+                        .setName("discord")
+                        .setDescription(
+                            "The person to ping in the records channel"
+                        )
                 )
         )
         .addSubcommand((subcommand) =>
@@ -341,14 +380,14 @@ module.exports = {
                         Sequelize.fn("LOWER", Sequelize.col("name")),
                         "LIKE",
                         "%" + focused.value.toLowerCase() + "%"
-                    ),
-                },
+                    )
+                }
             });
 
             return await interaction.respond(
                 levels.slice(0, 25).map((level) => ({
                     name: `#${level.position} - ${level.name}`,
-                    value: level.filename,
+                    value: level.filename
                 }))
             );
         } else if (focused.name === "username" || focused.name === "newuser") {
@@ -358,8 +397,8 @@ module.exports = {
                         Sequelize.fn("LOWER", Sequelize.col("name")),
                         "LIKE",
                         "%" + focused.value.toLowerCase() + "%"
-                    ),
-                },
+                    )
+                }
             });
             return await interaction.respond(
                 users
@@ -368,6 +407,11 @@ module.exports = {
             );
         }
     },
+    /**
+     *
+     * @param {import('discord.js').ChatInputCommandInteraction} interaction
+     * @returns
+     */
     async execute(interaction) {
         const { db } = require("../../index.js");
         if (interaction.options.getSubcommand() === "add") {
@@ -390,8 +434,8 @@ module.exports = {
 
             const level = await cache.levels.findOne({
                 where: {
-                    filename: [interaction.options.getString("levelname")],
-                },
+                    filename: [interaction.options.getString("levelname")]
+                }
             });
             if (!level)
                 return await interaction.editReply(
@@ -402,7 +446,7 @@ module.exports = {
             let user;
             try {
                 user = await cache.users.findOne({
-                    where: { name: username },
+                    where: { name: username }
                 });
                 if (!user) {
                     await interaction.editReply(
@@ -412,7 +456,7 @@ module.exports = {
                         name: username,
                         user_id: Math.floor(
                             1000000000 + Math.random() * 9000000000
-                        ),
+                        )
                     });
 
                     logger.log(user);
@@ -459,7 +503,7 @@ module.exports = {
                     owner: githubOwner,
                     repo: githubRepo,
                     path: githubDataPath + `/${filename}.json`,
-                    branch: githubBranch,
+                    branch: githubBranch
                 });
             } catch (fetchError) {
                 logger.info(`Couldn't fetch ${filename}.json: \n${fetchError}`);
@@ -536,27 +580,27 @@ module.exports = {
                     {
                         name: "Record holder",
                         value: `${user.name}`,
-                        inline: true,
+                        inline: true
                     },
                     {
                         name: "Record added by",
                         value: `${interaction.user}`,
-                        inline: true,
+                        inline: true
                     },
                     {
                         name: "Device",
                         value: `${device} (${fps} FPS)`,
-                        inline: true,
+                        inline: true
                     },
                     {
                         name: "Video",
                         value: `[Link](${linkStr})`,
-                        inline: true,
+                        inline: true
                     },
                     {
                         name: "Enjoyment",
                         value: enjoyment !== null ? `${enjoyment}/10` : "None",
-                        inline: true,
+                        inline: true
                     }
                 )
                 .setTimestamp();
@@ -565,7 +609,7 @@ module.exports = {
                 publicEmbed.addFields({
                     name: "Note",
                     value: `**_${note}_**`,
-                    inline: true,
+                    inline: true
                 });
             }
             logger.info(
@@ -602,7 +646,7 @@ module.exports = {
                     priority:
                         enablePriorityRole &&
                         interaction.member.roles.cache.has(priorityRoleID),
-                    moderator: interaction.user.id,
+                    moderator: interaction.user.id
                 });
                 record = recordEntry.dataValues;
                 await incrementProgress(db, interaction.user.id, 1);
@@ -624,14 +668,14 @@ module.exports = {
             let changes = [];
             changes.push({
                 path: githubDataPath + `/${filename}.json`,
-                content: JSON.stringify(parsedData, null, "\t"),
+                content: JSON.stringify(parsedData, null, "\t")
             });
 
             const changePath = githubDataPath + `/${filename}.json`;
             const content = JSON.stringify(parsedData);
 
             const debugStatus = await db.infos.findOne({
-                where: { name: "commitdebug" },
+                where: { name: "commitdebug" }
             });
             if (!debugStatus || !debugStatus.status) {
                 let commitSha;
@@ -640,7 +684,7 @@ module.exports = {
                     const { data: refData } = await octokit.git.getRef({
                         owner: githubOwner,
                         repo: githubRepo,
-                        ref: `heads/${githubBranch}`,
+                        ref: `heads/${githubBranch}`
                     });
                     commitSha = refData.object.sha;
                 } catch (getRefError) {
@@ -648,7 +692,7 @@ module.exports = {
                         `Something went wrong while fetching the latest commit SHA:\n${getRefError}`
                     );
                     await db.messageLocks.destroy({
-                        where: { discordid: interaction.message.id },
+                        where: { discordid: interaction.message.id }
                     });
                     return await interaction.editReply(
                         ":x: Something went wrong while commiting the records to github, please try again later (getRefError)"
@@ -660,7 +704,7 @@ module.exports = {
                     const { data: commitData } = await octokit.git.getCommit({
                         owner: githubOwner,
                         repo: githubRepo,
-                        commit_sha: commitSha,
+                        commit_sha: commitSha
                     });
                     treeSha = commitData.tree.sha;
                 } catch (getCommitError) {
@@ -668,7 +712,7 @@ module.exports = {
                         `Something went wrong while fetching the latest commit:\n${getCommitError}`
                     );
                     await db.messageLocks.destroy({
-                        where: { discordid: interaction.message.id },
+                        where: { discordid: interaction.message.id }
                     });
                     return await interaction.editReply(
                         ":x: Something went wrong while commiting the records to github, please try again later (getCommitError)"
@@ -686,15 +730,15 @@ module.exports = {
                             path: change.path,
                             mode: "100644",
                             type: "blob",
-                            content: change.content,
-                        })),
+                            content: change.content
+                        }))
                     });
                 } catch (createTreeError) {
                     logger.info(
                         `Something went wrong while creating a new tree:\n${createTreeError}`
                     );
                     await db.messageLocks.destroy({
-                        where: { discordid: interaction.message.id },
+                        where: { discordid: interaction.message.id }
                     });
                     return await interaction.editReply(
                         ":x: Something went wrong while commiting the records to github, please try again later (createTreeError)"
@@ -709,14 +753,14 @@ module.exports = {
                         repo: githubRepo,
                         message: `Added ${record.username}'s record to ${record.levelname} (${interaction.user.tag})`,
                         tree: newTree.data.sha,
-                        parents: [commitSha],
+                        parents: [commitSha]
                     });
                 } catch (createCommitError) {
                     logger.info(
                         `Something went wrong while creating a new commit:\n${createCommitError}`
                     );
                     await db.messageLocks.destroy({
-                        where: { discordid: interaction.message.id },
+                        where: { discordid: interaction.message.id }
                     });
                     return await interaction.editReply(
                         ":x: Something went wrong while commiting the records to github, please try again later (createCommitError)"
@@ -729,14 +773,14 @@ module.exports = {
                         owner: githubOwner,
                         repo: githubRepo,
                         ref: `heads/${githubBranch}`,
-                        sha: newCommit.data.sha,
+                        sha: newCommit.data.sha
                     });
                 } catch (updateRefError) {
                     logger.info(
                         `Something went wrong while updating the branch :\n${updateRefError}`
                     );
                     await db.messageLocks.destroy({
-                        where: { discordid: interaction.message.id },
+                        where: { discordid: interaction.message.id }
                     });
                     return await interaction.editReply(
                         ":x: Something went wrong while commiting the records to github, please try again later (updateRefError)"
@@ -752,7 +796,7 @@ module.exports = {
                     const response = await octokit.repos.getContent({
                         owner: githubOwner,
                         repo: githubRepo,
-                        path: changePath,
+                        path: changePath
                     });
                     fileSha = response.data.sha;
                 } catch (error) {
@@ -769,7 +813,7 @@ module.exports = {
                         path: changePath,
                         message: `Updated ${changePath} (${interaction.user.tag})`,
                         content: Buffer.from(content).toString("base64"),
-                        sha: fileSha,
+                        sha: fileSha
                     });
                     logger.info(
                         `Updated ${changePath} (${interaction.user.tag}`
@@ -792,17 +836,17 @@ module.exports = {
             // staffGuild.channels.cache.get(acceptedRecordsID).send({ content: '', embeds: [acceptEmbed], components: [row] });
             guild.channels.cache.get(archiveRecordsID).send({
                 content: userToPing ? `<@${userToPing.id}>` : "",
-                embeds: [publicEmbed],
+                embeds: [publicEmbed]
             });
 
             // Check if we need to send in dms as well
             const settings = await db.settings.findOne({
-                where: { moderator: interaction.user.id },
+                where: { moderator: interaction.user.id }
             });
             if (!settings) {
                 await db.settings.create({
                     moderator: interaction.user.id,
-                    sendAcceptedInDM: false,
+                    sendAcceptedInDM: false
                 });
             } else if (settings.sendAcceptedInDM) {
                 try {
@@ -811,9 +855,10 @@ module.exports = {
                         link: record.completionlink,
                         percent: record.percent,
                         hz: record.fps,
-                        ...(record.device === "Mobile" && { mobile: true }),
+                        ...(record.device === "Mobile" && { mobile: true })
                     };
-                    if (enjoyment !== null && enjoyment !== undefined) notRawGithubCode.enjoyment = enjoyment;
+                    if (enjoyment !== null && enjoyment !== undefined)
+                        notRawGithubCode.enjoyment = enjoyment;
 
                     const rawGithubCode = JSON.stringify(
                         notRawGithubCode,
@@ -832,14 +877,14 @@ module.exports = {
 
             // Update moderator data (create new entry if that moderator hasn't accepted/denied records before)
             const modInfo = await db.staffs.findOne({
-                where: { moderator: interaction.user.id },
+                where: { moderator: interaction.user.id }
             });
             if (!modInfo) {
                 await db.staffs.create({
                     moderator: interaction.user.id,
                     nbRecords: 1,
                     nbDenied: 0,
-                    nbAccepted: 1,
+                    nbAccepted: 1
                 });
             } else {
                 await modInfo.increment("nbRecords");
@@ -850,7 +895,7 @@ module.exports = {
                 db.dailyStats.create({
                     date: Date.now(),
                     nbRecordsAccepted: 1,
-                    nbRecordsPending: await db.pendingRecords.count(),
+                    nbRecordsPending: await db.pendingRecords.count()
                 });
             else
                 await db.dailyStats.update(
@@ -858,9 +903,9 @@ module.exports = {
                         nbRecordsAccepted:
                             (
                                 await db.dailyStats.findOne({
-                                    where: { date: Date.now() },
+                                    where: { date: Date.now() }
                                 })
-                            ).nbRecordsAccepted + 1,
+                            ).nbRecordsAccepted + 1
                     },
                     { where: { date: Date.now() } }
                 );
@@ -882,7 +927,7 @@ module.exports = {
 
             await interaction.editReply("Getting last record...");
             const lastRow = await db.acceptedRecords.findOne({
-                order: [["createdAt", "DESC"]],
+                order: [["createdAt", "DESC"]]
             });
 
             if (!lastRow) {
@@ -929,7 +974,7 @@ module.exports = {
             }
 
             const level = await cache.levels.findOne({
-                where: { filename: [newLevel] },
+                where: { filename: [newLevel] }
             });
             if (!level)
                 return await interaction.editReply(
@@ -957,7 +1002,7 @@ module.exports = {
 
             // Check record submission status
             const dbStatus = await db.infos.findOne({
-                where: { name: "records" },
+                where: { name: "records" }
             });
             if (!dbStatus)
                 return await interaction.editReply(
@@ -974,7 +1019,11 @@ module.exports = {
                 "Checking if the enjoyment is valid..."
             );
 
-            if (newEnjoyment !== null && newEnjoyment !== undefined && (newEnjoyment < -1 || newEnjoyment > 10))
+            if (
+                newEnjoyment !== null &&
+                newEnjoyment !== undefined &&
+                (newEnjoyment < -1 || newEnjoyment > 10)
+            )
                 return await interaction.editReply(
                     ":x: Couldn't add the record: Enjoyment rating must be between 0 and 10"
                 );
@@ -991,7 +1040,7 @@ module.exports = {
 
             // Get cached user
             const user = await cache.users.findOne({
-                where: { name: oldRecord.username },
+                where: { name: oldRecord.username }
             });
             if (!user)
                 return await interaction.editReply(
@@ -1016,27 +1065,27 @@ module.exports = {
                     {
                         name: "Record holder",
                         value: `${user.name}`,
-                        inline: true,
+                        inline: true
                     },
                     {
                         name: "Record added by",
                         value: `${interaction.user}`,
-                        inline: true,
+                        inline: true
                     },
                     {
                         name: "Device",
                         value: `${newDevice} (${newFPS} FPS)`,
-                        inline: true,
+                        inline: true
                     },
                     {
                         name: "Video",
                         value: `[Link](${oldRecord.completionlink})`,
-                        inline: true,
+                        inline: true
                     },
                     {
                         name: "Enjoyment",
                         value: newEnjoyment ? `${newEnjoyment}/10` : "None",
-                        inline: true,
+                        inline: true
                     }
                 )
                 .setTimestamp();
@@ -1056,7 +1105,7 @@ module.exports = {
                     owner: githubOwner,
                     repo: githubRepo,
                     path: githubDataPath + `/${filename}.json`,
-                    branch: githubBranch,
+                    branch: githubBranch
                 });
             } catch (fetchError) {
                 logger.info(`Couldn't fetch ${filename}.json: \n${fetchError}`);
@@ -1146,7 +1195,7 @@ module.exports = {
                     additionalnotes: newNotes,
                     priority: oldRecord.priority, // always false
                     modMenu: newModMenu,
-                    moderator: interaction.user.id, // always equal to submitter
+                    moderator: interaction.user.id // always equal to submitter
                 });
 
                 record = recordEntry.dataValues;
@@ -1167,14 +1216,14 @@ module.exports = {
             let changes = [];
             changes.push({
                 path: githubDataPath + `/${filename}.json`,
-                content: JSON.stringify(parsedData, null, "\t"),
+                content: JSON.stringify(parsedData, null, "\t")
             });
 
             const changePath = githubDataPath + `/${filename}.json`;
             const content = JSON.stringify(parsedData);
 
             const debugStatus = await db.infos.findOne({
-                where: { name: "commitdebug" },
+                where: { name: "commitdebug" }
             });
             if (!debugStatus || !debugStatus.status) {
                 let commitSha;
@@ -1183,7 +1232,7 @@ module.exports = {
                     const { data: refData } = await octokit.git.getRef({
                         owner: githubOwner,
                         repo: githubRepo,
-                        ref: `heads/${githubBranch}`,
+                        ref: `heads/${githubBranch}`
                     });
                     commitSha = refData.object.sha;
                 } catch (getRefError) {
@@ -1191,7 +1240,7 @@ module.exports = {
                         `Something went wrong while fetching the latest commit SHA:\n${getRefError}`
                     );
                     await db.messageLocks.destroy({
-                        where: { discordid: interaction.message.id },
+                        where: { discordid: interaction.message.id }
                     });
                     return await interaction.editReply(
                         ":x: Something went wrong while commiting the records to github, please try again later (getRefError)"
@@ -1203,7 +1252,7 @@ module.exports = {
                     const { data: commitData } = await octokit.git.getCommit({
                         owner: githubOwner,
                         repo: githubRepo,
-                        commit_sha: commitSha,
+                        commit_sha: commitSha
                     });
                     treeSha = commitData.tree.sha;
                 } catch (getCommitError) {
@@ -1211,7 +1260,7 @@ module.exports = {
                         `Something went wrong while fetching the latest commit:\n${getCommitError}`
                     );
                     await db.messageLocks.destroy({
-                        where: { discordid: interaction.message.id },
+                        where: { discordid: interaction.message.id }
                     });
                     return await interaction.editReply(
                         ":x: Something went wrong while commiting the records to github, please try again later (getCommitError)"
@@ -1229,15 +1278,15 @@ module.exports = {
                             path: change.path,
                             mode: "100644",
                             type: "blob",
-                            content: change.content,
-                        })),
+                            content: change.content
+                        }))
                     });
                 } catch (createTreeError) {
                     logger.info(
                         `Something went wrong while creating a new tree:\n${createTreeError}`
                     );
                     await db.messageLocks.destroy({
-                        where: { discordid: interaction.message.id },
+                        where: { discordid: interaction.message.id }
                     });
                     return await interaction.editReply(
                         ":x: Something went wrong while commiting the records to github, please try again later (createTreeError)"
@@ -1252,14 +1301,14 @@ module.exports = {
                         repo: githubRepo,
                         message: `Added ${record.username}'s record to ${filename} (${interaction.user.tag})`,
                         tree: newTree.data.sha,
-                        parents: [commitSha],
+                        parents: [commitSha]
                     });
                 } catch (createCommitError) {
                     logger.info(
                         `Something went wrong while creating a new commit:\n${createCommitError}`
                     );
                     await db.messageLocks.destroy({
-                        where: { discordid: interaction.message.id },
+                        where: { discordid: interaction.message.id }
                     });
                     return await interaction.editReply(
                         ":x: Something went wrong while commiting the records to github, please try again later (createCommitError)"
@@ -1272,14 +1321,14 @@ module.exports = {
                         owner: githubOwner,
                         repo: githubRepo,
                         ref: `heads/${githubBranch}`,
-                        sha: newCommit.data.sha,
+                        sha: newCommit.data.sha
                     });
                 } catch (updateRefError) {
                     logger.info(
                         `Something went wrong while updating the branch :\n${updateRefError}`
                     );
                     await db.messageLocks.destroy({
-                        where: { discordid: interaction.message.id },
+                        where: { discordid: interaction.message.id }
                     });
                     return await interaction.editReply(
                         ":x: Something went wrong while commiting the records to github, please try again later (updateRefError)"
@@ -1295,7 +1344,7 @@ module.exports = {
                     const response = await octokit.repos.getContent({
                         owner: githubOwner,
                         repo: githubRepo,
-                        path: changePath,
+                        path: changePath
                     });
                     fileSha = response.data.sha;
                 } catch (error) {
@@ -1312,7 +1361,7 @@ module.exports = {
                         path: changePath,
                         message: `Updated ${changePath} (${interaction.user.tag})`,
                         content: Buffer.from(content).toString("base64"),
-                        sha: fileSha,
+                        sha: fileSha
                     });
                     logger.info(
                         `Updated ${changePath} (${interaction.user.tag}`
@@ -1339,12 +1388,12 @@ module.exports = {
 
             // Check if we need to send in dms as well
             const settings = await db.settings.findOne({
-                where: { moderator: interaction.user.id },
+                where: { moderator: interaction.user.id }
             });
             if (!settings) {
                 await db.settings.create({
                     moderator: interaction.user.id,
-                    sendAcceptedInDM: false,
+                    sendAcceptedInDM: false
                 });
             } else if (settings.sendAcceptedInDM) {
                 try {
@@ -1353,10 +1402,13 @@ module.exports = {
                         link: record.completionlink,
                         percent: record.percent,
                         hz: record.fps,
-                        ...(record.device === "Mobile" && { mobile: true }),
+                        ...(record.device === "Mobile" && { mobile: true })
                     };
 
-                    if (record.enjoyment !== null && record.enjoyment !== undefined)
+                    if (
+                        record.enjoyment !== null &&
+                        record.enjoyment !== undefined
+                    )
                         notRawGithubCode.enjoyment = record.enjoyment;
 
                     const rawGithubCode = JSON.stringify(
@@ -1376,14 +1428,14 @@ module.exports = {
 
             // Update moderator data (create new entry if that moderator hasn't accepted/denied records before)
             const modInfo = await db.staffs.findOne({
-                where: { moderator: interaction.user.id },
+                where: { moderator: interaction.user.id }
             });
             if (!modInfo) {
                 await db.staffs.create({
                     moderator: interaction.user.id,
                     nbRecords: 1,
                     nbDenied: 0,
-                    nbAccepted: 1,
+                    nbAccepted: 1
                 });
             } else {
                 await modInfo.increment("nbRecords");
@@ -1394,7 +1446,7 @@ module.exports = {
                 db.dailyStats.create({
                     date: Date.now(),
                     nbRecordsAccepted: 1,
-                    nbRecordsPending: await db.pendingRecords.count(),
+                    nbRecordsPending: await db.pendingRecords.count()
                 });
             else
                 await db.dailyStats.update(
@@ -1402,9 +1454,9 @@ module.exports = {
                         nbRecordsAccepted:
                             (
                                 await db.dailyStats.findOne({
-                                    where: { date: Date.now() },
+                                    where: { date: Date.now() }
                                 })
-                            ).nbRecordsAccepted + 1,
+                            ).nbRecordsAccepted + 1
                     },
                     { where: { date: Date.now() } }
                 );
@@ -1425,7 +1477,7 @@ module.exports = {
 
             const modInfo = await db.staffs.findOne({
                 attribute: ["nbRecords", "nbAccepted", "nbDenied", "updatedAt"],
-                where: { moderator: modId },
+                where: { moderator: modId }
             });
 
             if (!modInfo) {
@@ -1438,25 +1490,25 @@ module.exports = {
             const modAcceptedData = await db.acceptedRecords.findAll({
                 attributes: [
                     [Sequelize.literal('DATE("createdAt")'), "date"],
-                    [Sequelize.literal("COUNT(*)"), "count"],
+                    [Sequelize.literal("COUNT(*)"), "count"]
                 ],
                 group: ["date"],
                 where: {
                     moderator: modId,
-                    createdAt: { [Sequelize.Op.gte]: minDate },
-                },
+                    createdAt: { [Sequelize.Op.gte]: minDate }
+                }
             });
 
             const modDeniedData = await db.deniedRecords.findAll({
                 attributes: [
                     [Sequelize.literal('DATE("createdAt")'), "date"],
-                    [Sequelize.literal("COUNT(*)"), "count"],
+                    [Sequelize.literal("COUNT(*)"), "count"]
                 ],
                 group: ["date"],
                 where: {
                     moderator: modId,
-                    createdAt: { [Sequelize.Op.gte]: minDate },
-                },
+                    createdAt: { [Sequelize.Op.gte]: minDate }
+                }
             });
 
             const labels = [];
@@ -1499,7 +1551,7 @@ module.exports = {
             const renderer = new ChartJSNodeCanvas({
                 width: 800,
                 height: 300,
-                backgroundColour: "white",
+                backgroundColour: "white"
             });
             const image = await renderer.renderToBuffer({
                 // Build your graph passing option you want
@@ -1510,31 +1562,31 @@ module.exports = {
                         {
                             label: "Accepted Records",
                             backgroundColor: "green",
-                            data: datasA,
+                            data: datasA
                         },
                         {
                             label: "Denied Records",
                             backgroundColor: "red",
-                            data: datasD,
-                        },
-                    ],
+                            data: datasD
+                        }
+                    ]
                 },
                 options: {
                     responsive: true,
                     plugins: {
                         legend: {
-                            position: "top",
+                            position: "top"
                         },
                         title: {
                             display: true,
-                            text: "Moderator activity",
-                        },
-                    },
-                },
+                            text: "Moderator activity"
+                        }
+                    }
+                }
             });
 
             const attachment = await new AttachmentBuilder(image, {
-                name: "modgraph.png",
+                name: "modgraph.png"
             });
             const modInfoEmbed = new EmbedBuilder()
                 .setColor(0xffbf00)
@@ -1544,28 +1596,28 @@ module.exports = {
                     {
                         name: "Total records checked:",
                         value: `${modInfo.nbRecords}`,
-                        inline: true,
+                        inline: true
                     },
                     {
                         name: "Accepted records:",
                         value: `${modInfo.nbAccepted}`,
-                        inline: true,
+                        inline: true
                     },
                     {
                         name: "Denied records:",
                         value: `${modInfo.nbDenied}`,
-                        inline: true,
+                        inline: true
                     },
                     {
                         name: "Last activity:",
-                        value: `${modInfo.updatedAt.toDateString()}`,
+                        value: `${modInfo.updatedAt.toDateString()}`
                     }
                 )
                 .setImage("attachment://modgraph.png");
 
             return await interaction.editReply({
                 embeds: [modInfoEmbed],
-                files: [attachment],
+                files: [attachment]
             });
         } else if (interaction.options.getSubcommand() === "modleaderboard") {
             const { db } = require("../../index.js");
@@ -1583,8 +1635,8 @@ module.exports = {
                     "nbRecords",
                     "nbAccepted",
                     "nbDenied",
-                    "updatedAt",
-                ],
+                    "updatedAt"
+                ]
             });
             if (!nbTotal || !modInfos)
                 return await interaction.editReply(
@@ -1623,27 +1675,27 @@ module.exports = {
                 submissionsType === "pending"
                     ? db.pendingRecords
                     : submissionsType === "accepted"
-                    ? db.acceptedRecords
-                    : db.deniedRecords;
+                      ? db.acceptedRecords
+                      : db.deniedRecords;
             let strInfo = `Total records : ${await db.pendingRecords.count()} pending, ${await db.acceptedRecords.count()} accepted, ${await db.deniedRecords.count()} denied\n\n`;
             const users = await selectedDb.findAll({
                 attributes: [
                     "submitter",
-                    [Sequelize.fn("COUNT", "*"), "total_count"],
+                    [Sequelize.fn("COUNT", "*"), "total_count"]
                 ],
                 group: ["submitter"],
                 order: [[Sequelize.literal("total_count"), "DESC"]],
-                limit: 30,
+                limit: 30
             });
             for (let i = 0; i < users.length; i++) {
                 const pendingCount = await db.pendingRecords.count({
-                    where: { submitter: users[i].submitter },
+                    where: { submitter: users[i].submitter }
                 });
                 const acceptedCount = await db.acceptedRecords.count({
-                    where: { submitter: users[i].submitter },
+                    where: { submitter: users[i].submitter }
                 });
                 const deniedCount = await db.deniedRecords.count({
-                    where: { submitter: users[i].submitter },
+                    where: { submitter: users[i].submitter }
                 });
                 const submittedCount =
                     pendingCount + acceptedCount + deniedCount;
@@ -1669,7 +1721,7 @@ module.exports = {
             const update = await db.settings.update(
                 {
                     sendAcceptedInDM:
-                        interaction.options.getString("status") === "enabled",
+                        interaction.options.getString("status") === "enabled"
                 },
                 { where: { moderator: interaction.user.id } }
             );
@@ -1678,7 +1730,7 @@ module.exports = {
                 const create = await db.settings.create({
                     moderator: interaction.user.id,
                     sendAcceptedInDM:
-                        interaction.options.getString("status") === "enabled",
+                        interaction.options.getString("status") === "enabled"
                 });
 
                 if (!create)
@@ -1702,7 +1754,7 @@ module.exports = {
 
             if (
                 (await db.recordsToCommit.count({
-                    where: { discordid: interaction.id },
+                    where: { discordid: interaction.id }
                 })) == 0
             )
                 return await interaction.editReply(
@@ -1715,9 +1767,9 @@ module.exports = {
                     {
                         name: "Number of records:",
                         value: `${await db.recordsToCommit.count({
-                            where: { discordid: interaction.id },
+                            where: { discordid: interaction.id }
                         })}`,
-                        inline: true,
+                        inline: true
                     },
                     {
                         name: "Affected files:",
@@ -1725,11 +1777,11 @@ module.exports = {
                             (
                                 await db.recordsToCommit.findAll({
                                     where: { discordid: interaction.id },
-                                    group: "filename",
+                                    group: "filename"
                                 })
                             ).length
                         }`,
-                        inline: true,
+                        inline: true
                     }
                 )
                 .setTimestamp();
@@ -1750,7 +1802,7 @@ module.exports = {
 
             await interaction.editReply({
                 embeds: [commitEmbed],
-                components: [row],
+                components: [row]
             });
             const sent = await interaction.fetchReply();
             await db.recordsToCommit.update(
@@ -1768,7 +1820,7 @@ module.exports = {
             const update = await db.infos.update(
                 {
                     status:
-                        interaction.options.getString("status") === "enabled",
+                        interaction.options.getString("status") === "enabled"
                 },
                 { where: { name: "commitdebug" } }
             );
@@ -1804,7 +1856,7 @@ module.exports = {
             await interaction.deferReply({ ephemeral: true });
             const { cache, octokit } = require("../../index.js");
             const level = await cache.levels.findOne({
-                where: { filename: interaction.options.getString("levelname") },
+                where: { filename: interaction.options.getString("levelname") }
             });
             const username = interaction.options.getString("username");
 
@@ -1820,7 +1872,7 @@ module.exports = {
                     owner: githubOwner,
                     repo: githubRepo,
                     path: githubDataPath + `/${filename}.json`,
-                    branch: githubBranch,
+                    branch: githubBranch
                 });
             } catch (fetchError) {
                 logger.info(`Couldn't fetch ${filename}.json: \n${fetchError}`);
@@ -1869,14 +1921,14 @@ module.exports = {
             let changes = [];
             changes.push({
                 path: githubDataPath + `/${filename}.json`,
-                content: JSON.stringify(parsedData, null, "\t"),
+                content: JSON.stringify(parsedData, null, "\t")
             });
 
             const changePath = githubDataPath + `/${filename}.json`;
             const content = JSON.stringify(parsedData);
 
             const debugStatus = await db.infos.findOne({
-                where: { name: "commitdebug" },
+                where: { name: "commitdebug" }
             });
             if (!debugStatus || !debugStatus.status) {
                 let commitSha;
@@ -1885,7 +1937,7 @@ module.exports = {
                     const { data: refData } = await octokit.git.getRef({
                         owner: githubOwner,
                         repo: githubRepo,
-                        ref: `heads/${githubBranch}`,
+                        ref: `heads/${githubBranch}`
                     });
                     commitSha = refData.object.sha;
                 } catch (getRefError) {
@@ -1893,7 +1945,7 @@ module.exports = {
                         `Something went wrong while fetching the latest commit SHA:\n${getRefError}`
                     );
                     await db.messageLocks.destroy({
-                        where: { discordid: interaction.message.id },
+                        where: { discordid: interaction.message.id }
                     });
                     return await interaction.editReply(
                         ":x: Something went wrong while commiting the records to github, please try again later (getRefError)"
@@ -1905,7 +1957,7 @@ module.exports = {
                     const { data: commitData } = await octokit.git.getCommit({
                         owner: githubOwner,
                         repo: githubRepo,
-                        commit_sha: commitSha,
+                        commit_sha: commitSha
                     });
                     treeSha = commitData.tree.sha;
                 } catch (getCommitError) {
@@ -1913,7 +1965,7 @@ module.exports = {
                         `Something went wrong while fetching the latest commit:\n${getCommitError}`
                     );
                     await db.messageLocks.destroy({
-                        where: { discordid: interaction.message.id },
+                        where: { discordid: interaction.message.id }
                     });
                     return await interaction.editReply(
                         ":x: Something went wrong while commiting the records to github, please try again later (getCommitError)"
@@ -1931,15 +1983,15 @@ module.exports = {
                             path: change.path,
                             mode: "100644",
                             type: "blob",
-                            content: change.content,
-                        })),
+                            content: change.content
+                        }))
                     });
                 } catch (createTreeError) {
                     logger.info(
                         `Something went wrong while creating a new tree:\n${createTreeError}`
                     );
                     await db.messageLocks.destroy({
-                        where: { discordid: interaction.message.id },
+                        where: { discordid: interaction.message.id }
                     });
                     return await interaction.editReply(
                         ":x: Something went wrong while commiting the records to github, please try again later (createTreeError)"
@@ -1954,14 +2006,14 @@ module.exports = {
                         repo: githubRepo,
                         message: `Removed ${username}'s record from ${filename}.json (${interaction.user.tag})`,
                         tree: newTree.data.sha,
-                        parents: [commitSha],
+                        parents: [commitSha]
                     });
                 } catch (createCommitError) {
                     logger.info(
                         `Something went wrong while creating a new commit:\n${createCommitError}`
                     );
                     await db.messageLocks.destroy({
-                        where: { discordid: interaction.message.id },
+                        where: { discordid: interaction.message.id }
                     });
                     return await interaction.editReply(
                         ":x: Something went wrong while commiting the records to github, please try again later (createCommitError)"
@@ -1974,14 +2026,14 @@ module.exports = {
                         owner: githubOwner,
                         repo: githubRepo,
                         ref: `heads/${githubBranch}`,
-                        sha: newCommit.data.sha,
+                        sha: newCommit.data.sha
                     });
                 } catch (updateRefError) {
                     logger.info(
                         `Something went wrong while updating the branch :\n${updateRefError}`
                     );
                     await db.messageLocks.destroy({
-                        where: { discordid: interaction.message.id },
+                        where: { discordid: interaction.message.id }
                     });
                     return await interaction.editReply(
                         ":x: Something went wrong while commiting the records to github, please try again later (updateRefError)"
@@ -1998,7 +2050,7 @@ module.exports = {
                     const response = await octokit.repos.getContent({
                         owner: githubOwner,
                         repo: githubRepo,
-                        path: changePath,
+                        path: changePath
                     });
                     fileSha = response.data.sha;
                 } catch (error) {
@@ -2015,7 +2067,7 @@ module.exports = {
                         path: changePath,
                         message: `Updated ${changePath} (${interaction.user.tag})`,
                         content: Buffer.from(content).toString("base64"),
-                        sha: fileSha,
+                        sha: fileSha
                     });
                     logger.info(
                         `Updated ${changePath} (${interaction.user.tag}`
@@ -2036,7 +2088,7 @@ module.exports = {
             const olduser = interaction.options.getString("username");
 
             const level = await cache.levels.findOne({
-                where: { filename: levelname },
+                where: { filename: levelname }
             });
 
             if (!level)
@@ -2051,7 +2103,7 @@ module.exports = {
                     owner: githubOwner,
                     repo: githubRepo,
                     path: githubDataPath + `/${filename}.json`,
-                    branch: githubBranch,
+                    branch: githubBranch
                 });
             } catch (fetchError) {
                 logger.info(`Couldn't fetch ${filename}.json: \n${fetchError}`);
@@ -2123,7 +2175,7 @@ module.exports = {
             let changes = [];
             changes.push({
                 path: githubDataPath + `/${filename}.json`,
-                content: JSON.stringify(parsedData, null, "\t"),
+                content: JSON.stringify(parsedData, null, "\t")
             });
 
             let commitSha;
@@ -2132,7 +2184,7 @@ module.exports = {
                 const { data: refData } = await octokit.git.getRef({
                     owner: githubOwner,
                     repo: githubRepo,
-                    ref: `heads/${githubBranch}`,
+                    ref: `heads/${githubBranch}`
                 });
                 commitSha = refData.object.sha;
             } catch (getRefError) {
@@ -2149,7 +2201,7 @@ module.exports = {
                 const { data: commitData } = await octokit.git.getCommit({
                     owner: githubOwner,
                     repo: githubRepo,
-                    commit_sha: commitSha,
+                    commit_sha: commitSha
                 });
                 treeSha = commitData.tree.sha;
             } catch (getCommitError) {
@@ -2172,8 +2224,8 @@ module.exports = {
                         path: change.path,
                         mode: "100644",
                         type: "blob",
-                        content: change.content,
-                    })),
+                        content: change.content
+                    }))
                 });
             } catch (createTreeError) {
                 logger.info(
@@ -2192,7 +2244,7 @@ module.exports = {
                     repo: githubRepo,
                     message: `Updated ${olduser}'s record on ${levelname} (${interaction.user.tag})`,
                     tree: newTree.data.sha,
-                    parents: [commitSha],
+                    parents: [commitSha]
                 });
             } catch (createCommitError) {
                 logger.info(
@@ -2209,7 +2261,7 @@ module.exports = {
                     owner: githubOwner,
                     repo: githubRepo,
                     ref: `heads/${githubBranch}`,
-                    sha: newCommit.data.sha,
+                    sha: newCommit.data.sha
                 });
             } catch (updateRefError) {
                 logger.info(
@@ -2234,7 +2286,7 @@ module.exports = {
             await interaction.deferReply({ ephemeral: true });
             const { cache, octokit } = require("../../index.js");
             const level = await cache.levels.findOne({
-                where: { filename: interaction.options.getString("levelname") },
+                where: { filename: interaction.options.getString("levelname") }
             });
             const username = interaction.options.getString("username");
             let offset = interaction.options.getInteger("offset");
@@ -2253,7 +2305,7 @@ module.exports = {
                     owner: githubOwner,
                     repo: githubRepo,
                     path: githubDataPath + `/${filename}.json`,
-                    branch: githubBranch,
+                    branch: githubBranch
                 });
             } catch (fetchError) {
                 logger.info(`Couldn't fetch ${filename}.json: \n${fetchError}`);
@@ -2309,14 +2361,14 @@ module.exports = {
             let changes = [];
             changes.push({
                 path: githubDataPath + `/${filename}.json`,
-                content: JSON.stringify(parsedData, null, "\t"),
+                content: JSON.stringify(parsedData, null, "\t")
             });
 
             const changePath = githubDataPath + `/${filename}.json`;
             const content = JSON.stringify(parsedData);
 
             const debugStatus = await db.infos.findOne({
-                where: { name: "commitdebug" },
+                where: { name: "commitdebug" }
             });
             if (!debugStatus || !debugStatus.status) {
                 let commitSha;
@@ -2325,7 +2377,7 @@ module.exports = {
                     const { data: refData } = await octokit.git.getRef({
                         owner: githubOwner,
                         repo: githubRepo,
-                        ref: `heads/${githubBranch}`,
+                        ref: `heads/${githubBranch}`
                     });
                     commitSha = refData.object.sha;
                 } catch (getRefError) {
@@ -2333,7 +2385,7 @@ module.exports = {
                         `Something went wrong while fetching the latest commit SHA:\n${getRefError}`
                     );
                     await db.messageLocks.destroy({
-                        where: { discordid: interaction.message.id },
+                        where: { discordid: interaction.message.id }
                     });
                     return await interaction.editReply(
                         ":x: Something went wrong while commiting the records to github, please try again later (getRefError)"
@@ -2345,7 +2397,7 @@ module.exports = {
                     const { data: commitData } = await octokit.git.getCommit({
                         owner: githubOwner,
                         repo: githubRepo,
-                        commit_sha: commitSha,
+                        commit_sha: commitSha
                     });
                     treeSha = commitData.tree.sha;
                 } catch (getCommitError) {
@@ -2353,7 +2405,7 @@ module.exports = {
                         `Something went wrong while fetching the latest commit:\n${getCommitError}`
                     );
                     await db.messageLocks.destroy({
-                        where: { discordid: interaction.message.id },
+                        where: { discordid: interaction.message.id }
                     });
                     return await interaction.editReply(
                         ":x: Something went wrong while commiting the records to github, please try again later (getCommitError)"
@@ -2371,15 +2423,15 @@ module.exports = {
                             path: change.path,
                             mode: "100644",
                             type: "blob",
-                            content: change.content,
-                        })),
+                            content: change.content
+                        }))
                     });
                 } catch (createTreeError) {
                     logger.info(
                         `Something went wrong while creating a new tree:\n${createTreeError}`
                     );
                     await db.messageLocks.destroy({
-                        where: { discordid: interaction.message.id },
+                        where: { discordid: interaction.message.id }
                     });
                     return await interaction.editReply(
                         ":x: Something went wrong while commiting the records to github, please try again later (createTreeError)"
@@ -2394,14 +2446,14 @@ module.exports = {
                         repo: githubRepo,
                         message: `Reordered ${username}'s record on ${filename}.json (${interaction.user.tag})`,
                         tree: newTree.data.sha,
-                        parents: [commitSha],
+                        parents: [commitSha]
                     });
                 } catch (createCommitError) {
                     logger.info(
                         `Something went wrong while creating a new commit:\n${createCommitError}`
                     );
                     await db.messageLocks.destroy({
-                        where: { discordid: interaction.message.id },
+                        where: { discordid: interaction.message.id }
                     });
                     return await interaction.editReply(
                         ":x: Something went wrong while commiting the records to github, please try again later (createCommitError)"
@@ -2414,14 +2466,14 @@ module.exports = {
                         owner: githubOwner,
                         repo: githubRepo,
                         ref: `heads/${githubBranch}`,
-                        sha: newCommit.data.sha,
+                        sha: newCommit.data.sha
                     });
                 } catch (updateRefError) {
                     logger.info(
                         `Something went wrong while updating the branch :\n${updateRefError}`
                     );
                     await db.messageLocks.destroy({
-                        where: { discordid: interaction.message.id },
+                        where: { discordid: interaction.message.id }
                     });
                     return await interaction.editReply(
                         ":x: Something went wrong while commiting the records to github, please try again later (updateRefError)"
@@ -2440,7 +2492,7 @@ module.exports = {
                     const response = await octokit.repos.getContent({
                         owner: githubOwner,
                         repo: githubRepo,
-                        path: changePath,
+                        path: changePath
                     });
                     fileSha = response.data.sha;
                 } catch (error) {
@@ -2457,7 +2509,7 @@ module.exports = {
                         path: changePath,
                         message: `Updated ${changePath} (${interaction.user.tag})`,
                         content: Buffer.from(content).toString("base64"),
-                        sha: fileSha,
+                        sha: fileSha
                     });
                     logger.info(
                         `Updated ${changePath} (${interaction.user.tag}`
@@ -2532,7 +2584,7 @@ module.exports = {
 
                 changes.push({
                     path: `${githubDataPath}/${filename}.json`,
-                    content: JSON.stringify(parsedData, null, "\t"),
+                    content: JSON.stringify(parsedData, null, "\t")
                 });
             }
 
@@ -2544,7 +2596,7 @@ module.exports = {
                 const { data: refData } = await octokit.git.getRef({
                     owner: githubOwner,
                     repo: githubRepo,
-                    ref: `heads/${githubBranch}`,
+                    ref: `heads/${githubBranch}`
                 });
                 commitSha = refData.object.sha;
             } catch (getRefError) {
@@ -2552,7 +2604,7 @@ module.exports = {
                     `Something went wrong while fetching the latest commit SHA:\n${getRefError}`
                 );
                 await db.messageLocks.destroy({
-                    where: { discordid: interaction.message.id },
+                    where: { discordid: interaction.message.id }
                 });
                 return await interaction.editReply(
                     ":x: Something went wrong while commiting to github, please try again later (getRefError)"
@@ -2564,7 +2616,7 @@ module.exports = {
                 const { data: commitData } = await octokit.git.getCommit({
                     owner: githubOwner,
                     repo: githubRepo,
-                    commit_sha: commitSha,
+                    commit_sha: commitSha
                 });
                 treeSha = commitData.tree.sha;
             } catch (getCommitError) {
@@ -2572,7 +2624,7 @@ module.exports = {
                     `Something went wrong while fetching the latest commit:\n${getCommitError}`
                 );
                 await db.messageLocks.destroy({
-                    where: { discordid: interaction.message.id },
+                    where: { discordid: interaction.message.id }
                 });
                 return await interaction.editReply(
                     ":x: Something went wrong while commiting to github, please try again later (getCommitError)"
@@ -2590,15 +2642,15 @@ module.exports = {
                         path: change.path,
                         mode: "100644",
                         type: "blob",
-                        content: change.content,
-                    })),
+                        content: change.content
+                    }))
                 });
             } catch (createTreeError) {
                 logger.info(
                     `Something went wrong while creating a new tree:\n${createTreeError}`
                 );
                 await db.messageLocks.destroy({
-                    where: { discordid: interaction.message.id },
+                    where: { discordid: interaction.message.id }
                 });
                 return await interaction.editReply(
                     ":x: Something went wrong while commiting to github, please try again later (createTreeError)"
@@ -2613,14 +2665,14 @@ module.exports = {
                     repo: githubRepo,
                     message: `Banned ${username} from the list (${interaction.user.tag})`,
                     tree: newTree.data.sha,
-                    parents: [commitSha],
+                    parents: [commitSha]
                 });
             } catch (createCommitError) {
                 logger.info(
                     `Something went wrong while creating a new commit:\n${createCommitError}`
                 );
                 await db.messageLocks.destroy({
-                    where: { discordid: interaction.message.id },
+                    where: { discordid: interaction.message.id }
                 });
                 return await interaction.editReply(
                     ":x: Something went wrong while commiting to github, please try again later (createCommitError)"
@@ -2633,14 +2685,14 @@ module.exports = {
                     owner: githubOwner,
                     repo: githubRepo,
                     ref: `heads/${githubBranch}`,
-                    sha: newCommit.data.sha,
+                    sha: newCommit.data.sha
                 });
             } catch (updateRefError) {
                 logger.info(
                     `Something went wrong while updating the branch :\n${updateRefError}`
                 );
                 await db.messageLocks.destroy({
-                    where: { discordid: interaction.message.id },
+                    where: { discordid: interaction.message.id }
                 });
                 return await interaction.editReply(
                     ":x: Something went wrong while commiting to github, please try again later (updateRefError)"
@@ -2651,6 +2703,50 @@ module.exports = {
             );
 
             await interaction.editReply(`Banned ${username}!`);
+        } else if (interaction.options.getSubcommand() === "deny") {
+            await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+
+            const username = interaction.options.getString("username");
+            const filename = interaction.options.getString("levelname");
+            const reason = interaction.options.getString("reason");
+            const discord = interaction.options.getUser("user");
+
+            const { cache } = require("../../index.js");
+
+            const levelname = (
+                await cache.levels.findOne({
+                    where: { filename: filename },
+                    attributes: ["name"]
+                })
+            ).name;
+
+            const recordsChannel = interaction.client.guilds.cache
+                .get(guildId)
+                .channels.cache.get(archiveRecordsID);
+            if (!recordsChannel) {
+                return await interaction.editReply(
+                    ":x: Records channel not found."
+                );
+            }
+
+            await recordsChannel.send({
+                embeds: [
+                    new EmbedBuilder()
+                        .setColor(0xff0000)
+                        .setTitle(`:x: ${levelname}`)
+                        .addFields(
+                            { name: "Record holder", value: username },
+                            { name: "Reason", value: reason }
+                        )
+                ],
+                content: discord ?? undefined
+            });
+
+            await incrementProgress(db, interaction.user.id, 1);
+
+            return await interaction.editReply(
+                `:white_check_mark: Denied record!`
+            );
         }
-    },
+    }
 };
