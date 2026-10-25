@@ -3,16 +3,15 @@ const {
     githubOwner,
     githubRepo,
     githubBranch,
-    guildId,
-    enableSeparateStaffServer,
-    staffGuildId,
     archiveRecordsID,
+    guildId
 } = require("../config.json");
 const { EmbedBuilder } = require("discord.js");
 const logger = require("log4js").getLogger();
 const fs = require("fs");
 const path = require("path");
 const { cloneOrPullRepo } = require("../others/gitUtils.js");
+const { incrementProgress } = require("../others/shiftSystem.js");
 
 module.exports = {
     customId: "commitAddBulkRecords",
@@ -243,6 +242,8 @@ module.exports = {
                 },
                 { where: { date: Date.now() } }
             );
+
+        await incrementProgress(db, interaction.user.id, 1);
 
         const recordEmbeds = [];
 
