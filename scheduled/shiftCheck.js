@@ -2,7 +2,7 @@ const { processShiftReminders } = require("../others/shiftSystem.js");
 
 module.exports = {
     name: "shiftCheck",
-    cron: "0 * * * *",
+    cron: "0 15 * * *",
     enabled: true,
     async execute() {
         const { client, db } = require("../index.js");

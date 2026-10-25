@@ -6,6 +6,7 @@ const {
     leaderShiftLogsChannelId
 } = require("../config.json");
 const { Sequelize } = require("sequelize");
+const { shuffle } = require('../startUtils')
 
 /**
  *
@@ -115,11 +116,14 @@ async function setVacationMode(db, userId, vacationMode) {
 }
 
 async function calculateTargetAssignments(db, guild) {
-    const activeStaffIds = await getActiveStaffIds(guild, db);
+    let activeStaffIds = await getActiveStaffIds(guild, db);
     const state = await db.shiftState.findOne({ where: { id: 1 } });
     const pendingCount = Number((state && state.pendingCount) || 0);
     if (activeStaffIds.length === 0) {
         return { pendingCount, targetByUser: {} };
+    }
+    if (activeStaffIds.length > pendingCount) {
+        activeStaffIds = shuffle(activeStaffIds).slice(0, pendingCount)
     }
     const base = Math.floor(pendingCount / activeStaffIds.length);
     const remainder = pendingCount % activeStaffIds.length;
@@ -146,7 +150,6 @@ async function resetShiftWeek(db, guild, pendingCount) {
     );
     const activeStaffIds = await getActiveStaffIds(guild, db);
     const { targetByUser } = await calculateTargetAssignments(db, guild);
-    console.log(targetByUser);
     const weekStart = new Date();
 
     await db.shiftState.upsert({

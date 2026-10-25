@@ -144,21 +144,21 @@ module.exports = {
             logger.info("Records status not found, creating...");
             await db.infos.create({
                 status: false,
-                name: "records",
+                name: "records"
             });
         }
         if (!(await db.infos.count({ where: { name: "commitdebug" } }))) {
             logger.info("Commit debug status not found, creating");
             await db.infos.create({
                 status: 0,
-                name: "commitdebug",
+                name: "commitdebug"
             });
         }
         if (!(await db.infos.count({ where: { name: "shifts" } }))) {
             logger.info("Shift status not found, creating");
             await db.infos.create({
                 status: false,
-                name: "shifts",
+                name: "shifts"
             });
         }
         if (!(await db.levelStats.count())) {
@@ -166,7 +166,7 @@ module.exports = {
             await db.levelStats.create({
                 submissions: 0,
                 accepts: 0,
-                denies: 0,
+                denies: 0
             });
         }
         if (!(await db.shiftState.count())) {
@@ -176,7 +176,7 @@ module.exports = {
                 pendingCount: 0,
                 weekStartedAt: new Date(),
                 reminder5Sent: false,
-                reminder6Sent: false,
+                reminder6Sent: false
             });
         }
 
@@ -216,7 +216,7 @@ module.exports = {
         try {
             const { data } = await octokit.rest.repos.get({
                 owner: githubOwner,
-                repo: githubRepo,
+                repo: githubRepo
             });
 
             if (data.permissions.push) {
@@ -232,4 +232,25 @@ module.exports = {
             logger.info(`Error fetching repository information: ${error}`);
         }
     },
+
+    async shuffle(array) {
+        // For more info, visit https://stackoverflow.com/questions/2450954/how-to-randomize-shuffle-a-javascript-array.
+        let currentIndex = array.length,
+            randomIndex;
+
+        while (currentIndex != 0) {
+            // While there remain elements to shuffle:
+            // Pick a remaining element...
+            randomIndex = Math.floor(Math.random() * currentIndex);
+            currentIndex--;
+
+            // ...and swap it with the current element.
+            [array[currentIndex], array[randomIndex]] = [
+                array[randomIndex],
+                array[currentIndex]
+            ];
+        }
+
+        return array;
+    }
 };
