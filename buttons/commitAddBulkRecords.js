@@ -243,7 +243,7 @@ module.exports = {
                 { where: { date: Date.now() } }
             );
 
-        await incrementProgress(db, interaction.user.id, records.length - errored.length);
+        await incrementProgress(db, interaction.user.id, 1);
 
         const recordEmbeds = [];
 
