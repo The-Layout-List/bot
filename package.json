@@ -24,7 +24,7 @@
         "pako": "^3.0.2",
         "prettier": "^3.9.8",
         "sequelize": "^6.37.8",
-        "simple-git": "^3.36.0",
+        "simple-git": "^4.0.2",
         "sqlite3": "^6.0.1"
     },
     "devDependencies": {
