@@ -1,6 +1,6 @@
 const { endShiftWeek } = require("../others/shiftSystem.js");
 const { resetShiftWeek } = require("../others/shiftSystem.js");
-const { shiftLogsChannelId, staffGuildId, guildId } = require('../config.json')
+const { shiftLogsChannelId, staffGuildId, guildId } = require("../config.json");
 
 module.exports = {
     name: "resetShiftWeek",
@@ -32,7 +32,9 @@ module.exports = {
                         ([userId, count]) =>
                             `<@${userId}> - **${count} records**`
                     )
-                    .join("\n")}`,
+                    .join(
+                        "\n"
+                    )}\n\nDue <t:${Math.floor((Date.now() + 7 * 24 * 60 * 60 * 1000) / 1000)}:f>`,
                 allowedMentions: {
                     users: Object.entries(targetByUser)
                         .filter(([_, count]) => count > 0)
