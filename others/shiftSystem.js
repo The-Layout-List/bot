@@ -27,13 +27,13 @@ async function getRoleMembers(guild) {
  */
 async function getActiveStaffIds(guild, db) {
     const staffIds = await getRoleMembers(guild);
-    const dbActiveStaff = await db.shiftMembers.findAll({
-        where: { vacationMode: false },
+    const dbVacationStaff = await db.shiftMembers.findAll({
+        where: { vacationMode: true },
         attributes: ["discordid"]
     });
 
     return staffIds.filter((id) =>
-        dbActiveStaff.some((staff) => staff.discordid === id)
+        !dbVacationStaff.some((staff) => staff.discordid === id)
     );
 }
 
