@@ -3,6 +3,7 @@ const {
     MessageFlags
 } = require("discord.js");
 const { getCurrentProgress } = require("../../others/shiftSystem.js");
+const { vacationModeRoleId } = require("../../config.json");
 
 module.exports = {
     enabled: true,
@@ -28,7 +29,7 @@ module.exports = {
         if (interaction.options.getSubcommand() === "progress") {
             const progress = await getCurrentProgress(db, interaction.user.id);
             return interaction.editReply({
-                content: `Shift progress for <@${interaction.user.id}>: ${progress.currentCount}/${progress.targetCount} records completed${progress.vacationMode ? " (vacation mode enabled)" : ""}`
+                content: `Shift progress for <@${interaction.user.id}>: ${progress.currentCount}/${progress.targetCount} records completed${interaction.member.roles.cache.has(vacationModeRoleId) ? " (vacation mode enabled)" : ""}`
             });
         }
     }

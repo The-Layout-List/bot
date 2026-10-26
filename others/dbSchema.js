@@ -137,10 +137,6 @@ module.exports = {
                 type: Sequelize.INTEGER,
                 defaultValue: 0,
             },
-            vacationMode: {
-                type: Sequelize.BOOLEAN,
-                defaultValue: false,
-            },
             reminder5Sent: {
                 type: Sequelize.BOOLEAN,
                 defaultValue: false,

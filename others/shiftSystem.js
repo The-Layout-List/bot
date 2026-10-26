@@ -3,7 +3,8 @@ const {
     guildId,
     staffGuildId,
     hqListStaffRoleId,
-    leaderShiftLogsChannelId
+    leaderShiftLogsChannelId,
+    vacationModeRoleId
 } = require("../config.json");
 const { Sequelize } = require("sequelize");
 const { shuffle } = require('../startUtils')
@@ -18,28 +19,23 @@ async function getRoleMembers(guild) {
     if (!role) return [];
     return [...role.members.values()].map((member) => member.user.id);
 }
+async function getVacationModeUsers(guild) {
+    const role = guild.roles.cache.get(vacationModeRoleId);
+    if (!role) return [];
+    return [...role.members.values()].map((member) => member.user.id);
+}
 
 /**
  *
  * @param {Guild} guild
- * @param db
  * @returns
  */
-async function getActiveStaffIds(guild, db) {
+async function getActiveStaffIds(guild) {
     const staffIds = await getRoleMembers(guild);
-    const dbVacationStaff = await db.shiftMembers.findAll({
-        where: { vacationMode: true },
-        attributes: ["discordid"]
-    });
-
+    const vacationModers = await getVacationModeUsers(guild);
     return staffIds.filter((id) =>
-        !dbVacationStaff.some((staff) => staff.discordid === id)
+        !vacationModers.includes(id)
     );
-}
-
-async function getGuildStaffCount(client, db) {
-    const guild = client.guilds.cache.get(staffGuildId ?? guildId);
-    return (await getActiveStaffIds(guild, db)).length;
 }
 
 async function ensureShiftMember(db, userId) {
@@ -52,7 +48,6 @@ async function ensureShiftMember(db, userId) {
         discordid: userId,
         currentCount: 0,
         targetCount: 0,
-        vacationMode: false,
         reminder5Sent: false,
         reminder6Sent: false,
         weekStartedAt: new Date()
@@ -91,7 +86,6 @@ async function getCurrentProgress(db, userId) {
         userId,
         currentCount: Number(profile.currentCount || 0),
         targetCount: Number(profile.targetCount || 0),
-        vacationMode: Boolean(profile.vacationMode),
         reminder5Sent: Boolean(profile.reminder5Sent),
         reminder6Sent: Boolean(profile.reminder6Sent),
         weekStartedAt: profile.weekStartedAt
@@ -108,14 +102,8 @@ async function incrementProgress(db, userId, amount = 1) {
     return profile;
 }
 
-async function setVacationMode(db, userId, vacationMode) {
-    const profile = await ensureShiftMember(db, userId);
-    await profile.update({ vacationMode: Boolean(vacationMode) });
-    return profile;
-}
-
 async function calculateTargetAssignments(db, guild) {
-    let activeStaffIds = await getActiveStaffIds(guild, db);
+    let activeStaffIds = await getActiveStaffIds(guild);
     const state = await db.shiftState.findOne({ where: { id: 1 } });
     const pendingCount = Number((state && state.pendingCount) || 0);
     if (activeStaffIds.length === 0) {
@@ -147,7 +135,7 @@ async function resetShiftWeek(db, guild, pendingCount) {
         0,
         Number(pendingCount || state?.pendingCount || 0)
     );
-    const activeStaffIds = await getActiveStaffIds(guild, db);
+    const activeStaffIds = await getActiveStaffIds(guild);
     const { targetByUser } = await calculateTargetAssignments(db, guild);
     const weekStart = new Date();
 
@@ -160,9 +148,10 @@ async function resetShiftWeek(db, guild, pendingCount) {
     });
 
     const allStaffIds = new Set(await getRoleMembers(guild));
+    const vacationModeRoleMembers = await getVacationModeUsers(guild);
     for (const memberId of allStaffIds) {
         let profile = await ensureShiftMember(db, memberId);
-        const isVacation = Boolean(profile.vacationMode);
+        const isVacation = vacationModeRoleMembers.includes(memberId);
         const isActive = activeStaffIds.includes(memberId);
         profile = await profile.update({
             targetCount:
@@ -171,7 +160,6 @@ async function resetShiftWeek(db, guild, pendingCount) {
             weekStartedAt: weekStart,
             reminder5Sent: false,
             reminder6Sent: false,
-            vacationMode: isVacation
         });
     }
 
@@ -193,9 +181,7 @@ async function processShiftReminders(client, db) {
         where: {
             discordid: await getActiveStaffIds(
                 client.guilds.cache.get(staffGuildId ?? guildId),
-                db
             ),
-            vacationMode: false,
             targetCount: { [Sequelize.Op.gt]: 0 },
             currentCount: {
                 [Sequelize.Op.lt]: Sequelize.col("targetCount")
@@ -238,9 +224,7 @@ async function endShiftWeek(client, db) {
         where: {
             discordid: await getActiveStaffIds(
                 client.guilds.cache.get(staffGuildId ?? guildId),
-                db
             ),
-            vacationMode: false,
             currentCount: {
                 [Sequelize.Op.lt]: Sequelize.col("targetCount")
             }
@@ -260,13 +244,11 @@ async function endShiftWeek(client, db) {
 
 module.exports = {
     getActiveStaffIds,
-    getGuildStaffCount,
     ensureShiftMember,
     setPendingCount,
     setCurrentProgress,
     getCurrentProgress,
     incrementProgress,
-    setVacationMode,
     calculateTargetAssignments,
     resetShiftWeek,
     processShiftReminders,

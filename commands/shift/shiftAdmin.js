@@ -2,7 +2,6 @@ const { SlashCommandBuilder, PermissionFlagsBits } = require("discord.js");
 const {
     setPendingCount,
     resetShiftWeek,
-    setVacationMode,
     setCurrentProgress,
     processShiftReminders,
     getActiveStaffIds,
@@ -39,23 +38,6 @@ module.exports = {
                 .setName("resetweek")
                 .setDescription(
                     "Reset the weekly shift and assign even workloads"
-                )
-        )
-        .addSubcommand((subcommand) =>
-            subcommand
-                .setName("vacation")
-                .setDescription("Toggle vacation mode for a staff member")
-                .addUserOption((option) =>
-                    option
-                        .setName("member")
-                        .setDescription("Staff member to update")
-                        .setRequired(true)
-                )
-                .addBooleanOption((option) =>
-                    option
-                        .setName("on")
-                        .setDescription("Turn vacation mode on or off")
-                        .setRequired(true)
                 )
         )
         .addSubcommand((subcommand) =>
@@ -139,13 +121,6 @@ module.exports = {
             return interaction.editReply({
                 content: `Weekly shift reset complete. ${pendingCount} pending records were spread across staff members.`
             });
-        } else if (subcommand === "vacation") {
-            const member = interaction.options.getUser("member");
-            const enabled = interaction.options.getBoolean("on");
-            await setVacationMode(db, member.id, enabled);
-            return await interaction.editReply(
-                `Vacation mode for <@${member.id}> is now ${enabled ? "enabled" : "disabled"}.`
-            );
         } else if (subcommand === "setcount") {
             const member = interaction.options.getUser("member");
             const count = interaction.options.getInteger("count");
@@ -170,8 +145,7 @@ module.exports = {
                         [Op.notIn]: await getActiveStaffIds(
                             interaction.client.guilds.cache.get(
                                 staffGuildId ?? guildId
-                            ),
-                            db
+                            )
                         )
                     }
                 }
