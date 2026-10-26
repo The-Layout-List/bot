@@ -2,10 +2,15 @@
     "name": "aredl-bot",
     "version": "3.12.0",
     "description": "Discord bot for managing the All Rated Extreme Demons List",
-    "main": "index.js",
+    "main": "dist/index.js",
     "scripts": {
+        "dev": "tsx watch src/index.ts",
+        "build": "tsc --project tsconfig.json",
+        "start": "node dist/index.js",
         "testenv": "echo '{}' > ./config.json && cp './debug config.json' ./config.json",
-        "start": "node bot.js",
+        "db:generate": "prisma generate",
+        "db:push": "prisma db push",
+        "db:studio": "prisma studio",
         "format": "prettier --write .",
         "lint": "eslint ."
     },
@@ -14,7 +19,9 @@
     "dependencies": {
         "@napi-rs/canvas": "^1.0.9",
         "@octokit/rest": "20.1.2",
+        "@prisma/client": "^7.10.1",
         "chartjs-node-canvas": "^5.0.0",
+        "commandkit": "^0.1.10",
         "discord.js": "^14.27.0",
         "dotenv": "^17.4.2",
         "exceljs": "^4.4.0",
@@ -23,12 +30,16 @@
         "node-cron": "^4.6.0",
         "pako": "^3.0.2",
         "prettier": "^3.9.8",
+        "prisma": "^7.10.1",
         "sequelize": "^6.37.8",
         "simple-git": "^3.36.0",
         "sqlite3": "^6.0.1"
     },
     "devDependencies": {
         "@eslint/js": "^10.0.1",
-        "globals": "^17.12.0"
+        "@types/node": "^26.6.5",
+        "globals": "^17.12.0",
+        "tsx": "^4.23.15",
+        "typescript": "^7.0.2"
     }
 }

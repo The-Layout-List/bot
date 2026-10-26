@@ -1,0 +1,93 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model Info {
+  id   Int    @id @default(autoincrement())
+  name String @unique
+  status Boolean @default(false)
+}
+
+model LevelStat {
+  id Int @id @default(autoincrement())
+  submissions Int @default(0)
+  accepts Int @default(0)
+  denies Int @default(0)
+}
+
+model ShiftState {
+  id Int @id @default(1)
+  pendingCount Int @default(0)
+  weekStartedAt DateTime?
+  reminder5Sent Boolean @default(false)
+  reminder6Sent Boolean @default(false)
+}
+
+model PendingRecord {
+  id Int @id @default(autoincrement())
+  username String?
+  submitter String?
+  levelname String?
+  device String?
+  completionlink String?
+  enjoyment Int?
+  fps Int?
+  percent Int?
+  raw String?
+  ldm Int?
+  additionalnotes String?
+  discordid String? @unique
+  embedDiscordid String?
+  priority Boolean?
+  assigned String?
+  modMenu String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model AcceptedRecord {
+  id Int @id @default(autoincrement())
+  username String?
+  submitter String?
+  levelname String?
+  device String?
+  completionlink String?
+  enjoyment Int?
+  fps Int?
+  percent Int?
+  raw String?
+  ldm Int?
+  additionalnotes String?
+  priority Boolean?
+  modMenu String?
+  moderator String?
+  filename String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model DeniedRecord {
+  id Int @id @default(autoincrement())
+  username String?
+  submitter String?
+  levelname String?
+  device String?
+  completionlink String?
+  enjoyment Int?
+  fps Int?
+  percent Int?
+  raw String?
+  ldm Int?
+  additionalnotes String?
+  discordid String? @unique
+  priority Boolean?
+  modMenu String?
+  denyReason String?
+  moderator String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
