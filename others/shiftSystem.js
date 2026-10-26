@@ -122,7 +122,7 @@ async function calculateTargetAssignments(db, guild) {
         return { pendingCount, targetByUser: {} };
     }
     if (activeStaffIds.length > pendingCount) {
-        activeStaffIds = shuffle(activeStaffIds).slice(0, pendingCount)
+        activeStaffIds = (await shuffle(activeStaffIds)).slice(0, pendingCount)
     }
     const base = Math.floor(pendingCount / activeStaffIds.length);
     const remainder = pendingCount % activeStaffIds.length;
