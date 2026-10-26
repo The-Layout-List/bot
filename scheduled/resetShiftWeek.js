@@ -4,7 +4,7 @@ const { shiftLogsChannelId, staffGuildId, guildId } = require('../config.json')
 
 module.exports = {
     name: "resetShiftWeek",
-    cron: "0 1 * * 1",
+    cron: "0 0 * * 1",
     enabled: true,
     async execute() {
         const { client, db } = require("../index.js");
