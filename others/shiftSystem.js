@@ -161,6 +161,7 @@ async function resetShiftWeek(db, guild, pendingCount) {
     });
 
     const allStaffIds = new Set(await getRoleMembers(guild));
+    console.log(allStaffIds)
     for (const memberId of allStaffIds) {
         let profile = await ensureShiftMember(db, memberId);
         const isVacation = Boolean(profile.vacationMode);
