@@ -420,7 +420,7 @@ module.exports = {
             // add record to list
 
             // Check given level name
-            const { cache } = require("../../index.js");
+            const { cache, octokit } = require("../../index.js");
 
             const username = await interaction.options.getString("username");
             const device = await interaction.options.getString("device");
