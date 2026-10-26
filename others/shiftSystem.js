@@ -7,7 +7,6 @@ const {
 } = require("../config.json");
 const { Sequelize } = require("sequelize");
 const { shuffle } = require('../startUtils')
-const logger = require("log4js").getLogger();
 
 /**
  *
@@ -17,7 +16,6 @@ const logger = require("log4js").getLogger();
 async function getRoleMembers(guild) {
     const role = guild.roles.cache.get(hqListStaffRoleId);
     if (!role) return [];
-    logger.log([...role.members.keys()])
     return [...role.members.values()].map((member) => member.user.id);
 }
 
@@ -29,8 +27,6 @@ async function getRoleMembers(guild) {
  */
 async function getActiveStaffIds(guild, db) {
     const staffIds = await getRoleMembers(guild);
-    logger.log(staffIds)
-
     const dbActiveStaff = await db.shiftMembers.findAll({
         where: { vacationMode: false },
         attributes: ["discordid"]
@@ -164,7 +160,6 @@ async function resetShiftWeek(db, guild, pendingCount) {
     });
 
     const allStaffIds = new Set(await getRoleMembers(guild));
-    logger.log(allStaffIds)
     for (const memberId of allStaffIds) {
         let profile = await ensureShiftMember(db, memberId);
         const isVacation = Boolean(profile.vacationMode);
