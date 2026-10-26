@@ -17,6 +17,7 @@ const logger = require("log4js").getLogger();
 async function getRoleMembers(guild) {
     const role = guild.roles.cache.get(hqListStaffRoleId);
     if (!role) return [];
+    logger.log([...role.members.keys()])
     return [...role.members.values()].map((member) => member.user.id);
 }
 
@@ -28,6 +29,7 @@ async function getRoleMembers(guild) {
  */
 async function getActiveStaffIds(guild, db) {
     const staffIds = await getRoleMembers(guild);
+    logger.log(staffIds)
 
     const dbActiveStaff = await db.shiftMembers.findAll({
         where: { vacationMode: false },
