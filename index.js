@@ -1,4 +1,4 @@
-const simpleGit = require("simple-git");
+const { simpleGit } = require("simple-git");
 const log4js = require("log4js");
 const Sequelize = require("sequelize");
 const { Client, GatewayIntentBits, ActivityType } = require("discord.js");
