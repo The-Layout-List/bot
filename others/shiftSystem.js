@@ -103,14 +103,11 @@ async function incrementProgress(db, userId, amount = 1) {
 }
 
 async function calculateTargetAssignments(db, guild) {
-    let activeStaffIds = await getActiveStaffIds(guild);
+    let activeStaffIds = (await shuffle(await getActiveStaffIds(guild))).slice(0, pendingCount);
     const state = await db.shiftState.findOne({ where: { id: 1 } });
     const pendingCount = Number((state && state.pendingCount) || 0);
     if (activeStaffIds.length === 0) {
         return { pendingCount, targetByUser: {} };
-    }
-    if (activeStaffIds.length > pendingCount) {
-        activeStaffIds = (await shuffle(activeStaffIds)).slice(0, pendingCount)
     }
     const base = Math.floor(pendingCount / activeStaffIds.length);
     const remainder = pendingCount % activeStaffIds.length;
