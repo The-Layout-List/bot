@@ -1,11 +1,10 @@
-import { db } from "../lib/db";
-import { logger } from "../lib/logger";
-import type { ScheduledTask } from "./types";
+import { db } from "../../lib/db";
+import { logger } from "../../lib/logger";
+import { scheduledTask } from "../../lib/tasks";
 
-export default {
+export default scheduledTask({
     name: "resetSubmissions",
-    cron: "0 4 1 * *",
-    enabled: true,
+    schedule: "0 4 1 * *",
     async execute() {
         logger.log("Scheduled - Resetting submissions for all users...");
         await db.submitter.updateMany({ data: { submissions: 0 } });
@@ -14,4 +13,4 @@ export default {
         });
         logger.log("Scheduled - Submissions reset!");
     }
-} satisfies ScheduledTask;
+});

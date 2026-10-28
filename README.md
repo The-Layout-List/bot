@@ -60,7 +60,7 @@ Slash commands are registered automatically when the bot starts, in the public s
 
 > -   Commands live in `src/app/commands/(category)/`, and events in `src/app/events/<event name>/` (see the [CommandKit docs](https://commandkit.dev/docs)). Prefixing a file with `_` disables it.
 > -   Persistent buttons and modals live in `src/components/` and are registered in `src/components/index.ts`.
-> -   Scheduled tasks live in `src/scheduled/` and are registered in `src/scheduled/index.ts`.
+> -   Scheduled tasks live in `src/app/tasks/` and use [`@commandkit/tasks`](https://commandkit.dev/docs); define them with `scheduledTask()` from `src/lib/tasks.ts`. Their schedule is stored in `commandkit-tasks.db`.
 > -   The database schema is in `prisma/schema.prisma`. After changing it, run `npm run db:migrate -- --name <change>` to create a migration.
 > -   `npm run typecheck` and `npm run lint` check the code.
 

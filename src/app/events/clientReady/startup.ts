@@ -7,7 +7,6 @@ import {
     checkGithubPermissions,
     ensureDatabaseDefaults
 } from "../../../lib/utils";
-import { scheduledTasksInit } from "../../../scheduled";
 
 export const once = true;
 
@@ -50,6 +49,5 @@ export default async function (client: Client<true>) {
     const nbFound = await removeErroredRecords(client);
     logger.info(`Found a total of ${nbFound} errored records.`);
 
-    scheduledTasksInit(client);
     logger.info(`Initialization complete`);
 }

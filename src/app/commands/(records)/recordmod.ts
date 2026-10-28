@@ -20,7 +20,7 @@ import { config, commandGuilds } from "../../../lib/config";
 import { ChartJSNodeCanvas } from "chartjs-node-canvas";
 import { logger } from "../../../lib/logger";
 import { incrementProgress } from "../../../lib/shiftSystem";
-import updateData from "../../../scheduled/cacheUpdate";
+import { cache } from "../../../lib/cacheUpdate";
 import { db, incrementDailyStat } from "../../../lib/db";
 import { countRecordsPerDay, topSubmitters } from "../../../lib/stats";
 import { octokit, asFile } from "../../../lib/github";
@@ -2137,7 +2137,9 @@ export const chatInput: ChatInputCommand = async ({ interaction }) => {
             ":white_check_mark: This record has been updated!"
         );
     } else if (interaction.options.getSubcommand() === "updatedata") {
-        await updateData.execute();
+        await cache.updateLevels();
+        await cache.updatePacks();
+        await cache.updateUsers();
         return await interaction.reply(
             ":white_check_mark: Data has been updated"
         );

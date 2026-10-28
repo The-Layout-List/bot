@@ -1,14 +1,13 @@
-import { config } from "../lib/config";
-import { db } from "../lib/db";
-import { endShiftWeek, resetShiftWeek } from "../lib/shiftSystem";
-import type { ScheduledTask } from "./types";
+import { config } from "../../lib/config";
+import { db } from "../../lib/db";
+import { endShiftWeek, resetShiftWeek } from "../../lib/shiftSystem";
+import { scheduledTask } from "../../lib/tasks";
 
 const { shiftLogsChannelId, staffGuildId, guildId } = config;
 
-export default {
+export default scheduledTask({
     name: "resetShiftWeek",
-    cron: "0 0 * * 1",
-    enabled: true,
+    schedule: "0 0 * * 1",
     async execute(client) {
         const guild = client.guilds.cache.get(staffGuildId ?? guildId);
         if (!guild) return;
@@ -40,4 +39,4 @@ export default {
             });
         }
     }
-} satisfies ScheduledTask;
+});

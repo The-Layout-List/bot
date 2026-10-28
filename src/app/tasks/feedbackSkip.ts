@@ -1,15 +1,14 @@
 import { EmbedBuilder } from "discord.js";
-import { config } from "../lib/config";
-import { db } from "../lib/db";
-import type { ScheduledTask } from "./types";
+import { config } from "../../lib/config";
+import { db } from "../../lib/db";
+import { scheduledTask } from "../../lib/tasks";
 
 const { clientId } = config;
 const hours = 4;
 
-export default {
+export default scheduledTask({
     name: "feedbackSkip",
-    cron: `0 */${hours} * * *`,
-    enabled: true,
+    schedule: `0 */${hours} * * *`,
     async execute(client) {
         const embed = new EmbedBuilder()
             .setColor(0x34c3eb)
@@ -46,4 +45,4 @@ export default {
             });
         }
     }
-} satisfies ScheduledTask;
+});

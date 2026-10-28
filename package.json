@@ -24,6 +24,7 @@
     "author": "Minebox260",
     "license": "ISC",
     "dependencies": {
+        "@commandkit/tasks": "^1.2.6",
         "@napi-rs/canvas": "^1.0.10",
         "@octokit/rest": "20.1.2",
         "@prisma/adapter-pg": "^7.10.1",
@@ -35,7 +36,6 @@
         "exceljs": "^4.4.0",
         "is-url-http": "^2.3.13",
         "log4js": "^6.9.1",
-        "node-cron": "^4.6.0",
         "pako": "^3.0.2",
         "pg": "^8.23.1",
         "simple-git": "^4.0.2"

@@ -6,7 +6,7 @@ import type {
 } from "commandkit";
 import { config, commandGuilds } from "../../../lib/config";
 import { logger } from "../../../lib/logger";
-import updateLevels from "../../../scheduled/updateLevels";
+import { syncLevelsInVoting } from "../../../lib/levelsInVoting";
 import { db } from "../../../lib/db";
 
 const { guildId, debug } = config;
@@ -252,7 +252,7 @@ export const chatInput: ChatInputCommand = async ({ interaction }) => {
             embeds: [modInfoEmbed]
         });
     } else if (interaction.options.getSubcommand() === "sync") {
-        await updateLevels.execute(interaction.client);
+        await syncLevelsInVoting(interaction.client);
         return await interaction.editReply(":white_check_mark:");
     }
 };
