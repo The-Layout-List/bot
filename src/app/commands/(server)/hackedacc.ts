@@ -1,0 +1,77 @@
+import {
+    SlashCommandBuilder,
+    MessageFlags,
+    PermissionsBitField
+} from "discord.js";
+import type {
+    ChatInputCommand,
+    CommandData,
+    CommandMetadata
+} from "commandkit";
+import { commandGuilds } from "../../../lib/config";
+
+export const cooldown = 1;
+
+export const command: CommandData = new SlashCommandBuilder()
+    .setName("hackedacc")
+    .setDescription("HACKERS BEGONE")
+    .setDefaultMemberPermissions(PermissionsBitField.Flags.BanMembers)
+    .addUserOption((option) =>
+        option.setName("hacker").setDescription("The hacker")
+    )
+    .toJSON();
+
+export const metadata: CommandMetadata = { guilds: commandGuilds() };
+
+export const chatInput: ChatInputCommand = async ({ interaction }) => {
+    if (!interaction.inCachedGuild()) return;
+    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+    const hacker = interaction.options.getUser("hacker");
+    if (!hacker) {
+        await interaction.editReply(":x: Error retrieving user");
+        return;
+    }
+    const member = interaction.guild.members.cache.get(hacker.id);
+    if (!member) {
+        await interaction.editReply(":x: Error retrieving member");
+        return;
+    }
+    if (member.id === interaction.user.id) {
+        await interaction.editReply(":x: You cannot ban yourself");
+        return;
+    }
+    if (
+        interaction.guild.ownerId === member.id ||
+        interaction.member.roles.highest.position <=
+            member.roles.highest.position
+    ) {
+        await interaction.editReply(":x: You cannot ban this user");
+        return;
+    }
+    if (!member.bannable) {
+        await interaction.editReply(":x: I cannot ban this user");
+        return;
+    }
+    const messages = (
+        await interaction.channel!.messages.fetch({
+            limit: 100
+        })
+    ).filter((message) => message.author.id === hacker.id);
+    if (messages.size > 0) {
+        const message = messages.last();
+        if (message) {
+            await message.reply(
+                "https://media.discordapp.net/attachments/1447594249481879625/1496942499921526834/goldensigma.gif?ex=6a5bc757&is=6a5a75d7&hm=76d2a958c54aad5e2fdf79e4707cd2ea2db02489f4ec029d6678c46840dfd698&=&width=767&height=648"
+            );
+        }
+    }
+    await member.ban({
+        reason: "Hacked account posting scams",
+        deleteMessageSeconds: 86400
+    });
+    await interaction.guild.bans.remove(hacker, "Hacked account auto unban");
+    // Log
+    return await interaction.editReply(
+        `:white_check_mark: Kicked ${hacker.tag}`
+    );
+};

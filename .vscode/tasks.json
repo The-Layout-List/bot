@@ -6,13 +6,13 @@
         {
             "label": "kill node",
             "type": "shell",
-            "command": "pkill -f 'node ./bot.js'",
+            "command": "pkill -f 'commandkit'",
             "problemMatcher": []
         },
         {
             "label": "run node",
             "type": "shell",
-            "command": "npm start",
+            "command": "npm run dev",
             "presentation": {
                 "close": true,
                 "panel": "shared"

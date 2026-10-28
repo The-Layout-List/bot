@@ -2,4 +2,9 @@
 **/.svn
 **/.hg
 **/node_modules
-**/.github
+**/.github**/dist
+**/.commandkit
+**/src/generated
+**/prisma/migrations
+**/data
+**/logs

@@ -17,7 +17,7 @@ jobs:
       - name: Deploy files
         uses: burnett01/rsync-deployments@v8
         with:
-          switches: -avz
+          switches: -avz --exclude=node_modules --exclude=dist --exclude=.commandkit
           path: ./
           remote_path: ${{ secrets.DEPLOY_PATH }}
           remote_host: ${{ secrets.DEPLOY_HOST }}
@@ -31,4 +31,9 @@ jobs:
           host: ${{ secrets.DEPLOY_HOST }}
           username: ${{ secrets.DEPLOY_USER }}
           key: ${{ secrets.DEPLOY_KEY }}
-          script: pm2 restart bot
+          script: |
+              cd ${{ secrets.DEPLOY_PATH }}
+              npm ci
+              npm run db:deploy
+              npm run build
+              pm2 restart bot
