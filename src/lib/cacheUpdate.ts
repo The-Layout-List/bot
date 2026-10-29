@@ -56,7 +56,7 @@ export async function updateCachedPacks(): Promise<void> {
         packs.push({
             name: pack.name,
             difficulty: pack.difficulty,
-            isDiff: pack.levels && pack.levels.length > 0
+            isDiff: pack.levels && pack.levels.length > 0 ? true : false
         });
     }
     try {
