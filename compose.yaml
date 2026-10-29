@@ -4,6 +4,7 @@ x-database-url: &database-url postgresql://${POSTGRES_USER:-bot}:${POSTGRES_PASS
 
 services:
     db:
+        container_name: db
         image: postgres:17-alpine
         restart: unless-stopped
         environment:
@@ -25,6 +26,7 @@ services:
     # Applies pending Prisma migrations, then exits. Also usable for one-off
     # tooling, e.g. `docker compose run --rm migrate npm run db:import-sqlite`
     migrate:
+        container_name: migrate
         build:
             context: .
             target: build
@@ -38,6 +40,7 @@ services:
                 condition: service_healthy
 
     bot:
+        container_name: bot
         build:
             context: .
             target: runtime
