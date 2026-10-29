@@ -58,5 +58,18 @@ services:
             migrate:
                 condition: service_completed_successfully
 
+    restarter:
+        image: docker:cli
+        restart: unless-stopped
+        depends_on:
+            - bot
+        volumes:
+            - /var/run/docker.sock:/var/run/docker.sock
+        command:
+            [
+                "sh",
+                "-c",
+                "while :; do sleep 86400; docker restart layout-list-bot-bot-1 || true; done",
+            ]
 volumes:
     pgdata:
