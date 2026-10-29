@@ -1,0 +1,59 @@
+# TOKEN and GITHUB_TOKEN are read from .env. DATABASE_URL in .env is ignored
+# here: the bot always talks to the bundled `db` service.
+x-database-url: &database-url postgresql://${POSTGRES_USER:-bot}:${POSTGRES_PASSWORD:-bot}@db:5432/${POSTGRES_DB:-layoutlist}
+
+services:
+    db:
+        image: postgres:17-alpine
+        restart: unless-stopped
+        environment:
+            POSTGRES_USER: ${POSTGRES_USER:-bot}
+            POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-bot}
+            POSTGRES_DB: ${POSTGRES_DB:-layoutlist}
+        volumes:
+            - pgdata:/var/lib/postgresql/data
+        healthcheck:
+            test:
+                [
+                    "CMD-SHELL",
+                    "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"
+                ]
+            interval: 5s
+            timeout: 5s
+            retries: 10
+
+    # Applies pending Prisma migrations, then exits. Also usable for one-off
+    # tooling, e.g. `docker compose run --rm migrate npm run db:import-sqlite`
+    migrate:
+        build:
+            context: .
+            target: build
+        environment:
+            DATABASE_URL: *database-url
+        volumes:
+            - ./data:/app/data
+        command: ["npm", "run", "db:deploy"]
+        depends_on:
+            db:
+                condition: service_healthy
+
+    bot:
+        build:
+            context: .
+            target: runtime
+        restart: unless-stopped
+        env_file: .env
+        environment:
+            DATABASE_URL: *database-url
+            # Keep the task schedule alongside the rest of the persisted data
+            TASKS_DB_PATH: ./data/commandkit-tasks.db
+        volumes:
+            - ./config.json:/app/config.json:ro
+            - ./data:/app/data
+            - ./logs:/app/logs
+        depends_on:
+            migrate:
+                condition: service_completed_successfully
+
+volumes:
+    pgdata:

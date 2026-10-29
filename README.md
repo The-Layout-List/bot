@@ -56,6 +56,17 @@ To run the bot:
 
 Slash commands are registered automatically when the bot starts, in the public server and (if enabled) the staff server.
 
+### Docker
+
+The bot can also be run with [Docker Compose](https://docs.docker.com/compose/), which bundles a PostgreSQL database. Create `config.json` and `.env` as described above (`DATABASE_URL` is ignored, the bot always uses the bundled database), then run:
+
+> -   `docker compose up -d --build`: build and start the database and the bot. Pending migrations are applied automatically before the bot starts.
+> -   `docker compose logs -f bot`: follow the bot's output
+
+`data/` and `logs/` are mounted from the host, and the task schedule is kept in `data/commandkit-tasks.db`. The database is stored in the `pgdata` volume; set `POSTGRES_USER`, `POSTGRES_PASSWORD` and `POSTGRES_DB` in `.env` to change its credentials. To import data from the older SQLite version, run `docker compose run --rm migrate npm run db:import-sqlite -- ./data/database.sqlite` before starting the bot for the first time.
+
+> On Linux hosts the container runs as uid 1000, so `data/` and `logs/` must be writable by that user (`sudo chown -R 1000:1000 data logs`).
+
 ### Development
 
 > -   Commands live in `src/app/commands/(category)/`, and events in `src/app/events/<event name>/` (see the [CommandKit docs](https://commandkit.dev/docs)). Prefixing a file with `_` disables it.

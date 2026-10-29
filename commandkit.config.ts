@@ -39,7 +39,11 @@ export default defineConfig({
     plugins: [
         new FlatSubcommandRouting({}),
         // Scheduled jobs live in src/app/tasks, persisted in ./commandkit-tasks.db
-        tasks()
+        // (or TASKS_DB_PATH, which the Docker setup points into data/)
+        tasks({
+            sqliteDriverDatabasePath:
+                process.env.TASKS_DB_PATH ?? "./commandkit-tasks.db"
+        })
     ],
     // Commands are registered per-guild from each command's metadata; there
     // are no prefix (message) commands.
