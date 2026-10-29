@@ -1,50 +1,50 @@
 {
-    "debug": false,
+    "debug": true,
 
-    "enableSeparateStaffServer": true,
+    "enableSeparateStaffServer": false,
     "enablePriorityRole": false,
-    "enableWelcomeMessage": true,
+    "enableWelcomeMessage": false,
     "enableChangelogMessage": true,
 
     "scheduleCacheUpdate": "30 * * * *",
     "scheduleChangelog": "00 22 * * *",
 
-    "githubOwner": "The-Layout-List",
-    "githubRepo": "website",
+    "githubOwner": "sphericle",
+    "githubRepo": "ll-bot-test",
     "githubDataPath": "data",
     "githubBranch": "main",
 
-    "clientId": "1315066782213738597",
-    "guildId": "855211848362098699",
-    "staffGuildId": "1541224616469729453",
+    "clientId": "1320769215216619601",
+    "guildId": "1308195426410954884",
+    "staffGuildId": "1308195426410954884",
 
-    "priorityRoleID": "1129273868759089242",
-    "submissionLockRoleID": "1115681352772235274",
+    "priorityRoleID": "0",
+    "submissionLockRoleID": "0",
 
-    "pendingRecordsID": "988671478096609290",
-    "priorityRecordsID": "988671478096609290",
+    "pendingRecordsID": "1328535145455812660",
+    "priorityRecordsID": "1328535145455812660",
 
     "acceptedRecordsID": "0",
     "deniedRecordsID": "0",
-    "archiveRecordsID": "859514927860416562",
-    "recordsID": "859514927860416562",
+    "archiveRecordsID": "1328535145455812660",
+    "recordsID": "1328535145455812660",
 
-    "changelogID": "855212332047925328",
+    "changelogID": "1435403527605190666",
     "changelogRoleID": "0",
 
-    "guildMemberAddID": "855211848868298795",
+    "guildMemberAddID": "1328535145455812660",
 
-    "submissionResultsID": "884614851790524436",
-    "reliableThreadID": "1130258968057487421",
-    "staffRole": "855237332616740895",
-    "submissionsChannelID": "855228426208935936",
-    "submissionRole": "956765961036390421",
+    "submissionResultsID": "1328535145455812660",
+    "reliableThreadID": "1324848402500026428",
+    "staffRole": "1320770731985866803",
+    "submissionsChannelID": "1328535145455812660",
+    "submissionRole": "1342609332872675388",
 
-    "feedbackChannels": ["897605988704723006", "1326653010851397632"],
-    "feedbackBanID": "1326656060303474808",
+    "feedbackChannels": ["1328535145455812660", "1324848639394320464"],
+    "feedbackBanID": "1327481553567223919",
     "maxSkipCount": 3,
-    "hqListStaffRoleId": "1541226281373540484",
-    "shiftLogsChannelId": "1563619992623259719",
-    "leaderShiftLogsChannelId": "1563622353508896909",
-    "vacationModeRoleId": "1564073302060826695"
+    "hqListStaffRoleId": "1563596254238220318",
+    "shiftLogsChannelId": "1546663064181407805",
+    "leaderShiftLogsChannelId": "1563621665668210889",
+    "vacationModeRoleId": "1564100893731987538"
 }

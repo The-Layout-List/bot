@@ -7,3 +7,8 @@ logs
 .DS_Store
 config.json
 *.code-workspace
+dist
+.commandkit
+src/generated
+commandkit-env.d.ts
+commandkit-tasks.db*

@@ -1,0 +1,442 @@
+generator client {
+  provider        = "prisma-client"
+  output          = "../src/generated/prisma"
+  moduleFormat    = "esm"
+  // Throw on explicitly `undefined` query values instead of silently ignoring
+  // them (e.g. `where: { name: undefined }` matching every row)
+  previewFeatures = ["strictUndefinedChecks"]
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ---------------------------------------------------------------------------
+// Records
+// ---------------------------------------------------------------------------
+
+model PendingRecord {
+  id              Int      @id @default(autoincrement())
+  username        String?
+  submitter       String?
+  levelname       String?
+  device          String?
+  completionlink  String?
+  enjoyment       Int?
+  fps             Int?
+  percent         Int?
+  raw             String?
+  ldm             Int?
+  additionalnotes String?
+  discordid       String?  @unique
+  embedDiscordid  String?
+  priority        Boolean?
+  assigned        String?
+  modMenu         String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@map("pendingRecords")
+}
+
+model AcceptedRecord {
+  id              Int      @id @default(autoincrement())
+  username        String?
+  submitter       String?
+  levelname       String?
+  device          String?
+  completionlink  String?
+  enjoyment       Int?
+  fps             Int?
+  percent         Int?
+  raw             String?
+  ldm             Int?
+  additionalnotes String?
+  priority        Boolean?
+  modMenu         String?
+  moderator       String?
+  filename        String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([moderator])
+  @@index([createdAt])
+  @@map("acceptedRecords")
+}
+
+model DeniedRecord {
+  id              Int      @id @default(autoincrement())
+  username        String?
+  submitter       String?
+  levelname       String?
+  device          String?
+  completionlink  String?
+  enjoyment       Int?
+  fps             Int?
+  percent         Int?
+  raw             String?
+  ldm             Int?
+  additionalnotes String?
+  discordid       String?  @unique
+  priority        Boolean?
+  modMenu         String?
+  denyReason      String?
+  moderator       String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([moderator])
+  @@index([createdAt])
+  @@map("deniedRecords")
+}
+
+model RecordToCommit {
+  id         Int      @id @default(autoincrement())
+  filename   String
+  githubCode String
+  discordid  String
+  user       String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@map("recordsToCommit")
+}
+
+model BulkRecordSession {
+  id          Int      @id @default(autoincrement())
+  moderatorID String
+  playerName  String
+  video       String
+  mobile      Boolean
+  fps         Int
+  note        String?
+  discordID   String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("bulkRecordSessions")
+}
+
+model BulkRecord {
+  id          Int      @id @default(autoincrement())
+  moderatorID String
+  enjoyment   Int?
+  percent     Int
+  path        String
+  levelname   String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("bulkRecords")
+}
+
+// ---------------------------------------------------------------------------
+// List management
+// ---------------------------------------------------------------------------
+
+model LevelToPlace {
+  id         Int      @id @default(autoincrement())
+  filename   String
+  position   Int
+  githubCode String
+  discordid  String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@map("levelsToPlace")
+}
+
+model LevelToMove {
+  id        Int      @id @default(autoincrement())
+  filename  String
+  position  Int
+  discordid String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("levelsToMove")
+}
+
+model LevelToLegacy {
+  id        Int      @id @default(autoincrement())
+  filename  String
+  discordid String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("levelsToLegacy")
+}
+
+model LevelFromLegacy {
+  id        Int      @id @default(autoincrement())
+  filename  String
+  position  Int
+  discordid String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("levelsFromLegacy")
+}
+
+model Changelog {
+  id           Int      @id @default(autoincrement())
+  levelname    String?
+  old_position Int?
+  new_position Int?
+  level_above  String?
+  level_below  String?
+  action       String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("changelogs")
+}
+
+model LevelInVoting {
+  id        Int      @id @default(autoincrement())
+  levelname String?
+  submitter String?
+  discordid String?
+  yeses     Int?
+  nos       Int?
+  shared    String?
+  paused    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("levelsInVoting")
+}
+
+// ---------------------------------------------------------------------------
+// Staff, shifts & stats
+// ---------------------------------------------------------------------------
+
+model MessageLock {
+  id            Int      @id @default(autoincrement())
+  discordid     String?
+  locked        Boolean?
+  userdiscordid String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@map("messageLocks")
+}
+
+model Staff {
+  id         Int      @id @default(autoincrement())
+  moderator  String?
+  nbRecords  Int?
+  nbAccepted Int?
+  nbDenied   Int?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@map("staff")
+}
+
+model ShiftMember {
+  id            Int       @id @default(autoincrement())
+  discordid     String?   @unique
+  currentCount  Int       @default(0)
+  targetCount   Int       @default(0)
+  reminder5Sent Boolean   @default(false)
+  reminder6Sent Boolean   @default(false)
+  weekStartedAt DateTime?
+  lastUpdated   DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@map("shiftMembers")
+}
+
+model ShiftState {
+  id            Int       @id @default(1)
+  pendingCount  Int       @default(0)
+  weekStartedAt DateTime?
+  reminder5Sent Boolean   @default(false)
+  reminder6Sent Boolean   @default(false)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@map("shiftState")
+}
+
+model LevelStats {
+  id          Int      @id @default(autoincrement())
+  submissions Int      @default(0)
+  accepts     Int      @default(0)
+  denies      Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("levelStats")
+}
+
+model DailyStats {
+  id                 Int      @id @default(autoincrement())
+  date               DateTime @unique @db.Date
+  nbRecordsSubmitted Int      @default(0)
+  nbRecordsPending   Int      @default(0)
+  nbRecordsAccepted  Int      @default(0)
+  nbRecordsDenied    Int      @default(0)
+  nbMembersJoined    Int      @default(0)
+  nbMembersLeft      Int      @default(0)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  @@map("dailyStats")
+}
+
+model Settings {
+  id               Int      @id @default(autoincrement())
+  moderator        String?
+  sendAcceptedInDM Boolean  @default(false)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@map("settings")
+}
+
+model Info {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  status    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("infos")
+}
+
+// ---------------------------------------------------------------------------
+// Server messages & community
+// ---------------------------------------------------------------------------
+
+model Embed {
+  id          Int      @id @default(autoincrement())
+  name        String
+  guild       String
+  channel     String
+  discordid   String
+  title       String?
+  description String?
+  color       String?
+  image       String?
+  sent        Boolean?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("embeds")
+}
+
+model Message {
+  id        Int      @id @default(autoincrement())
+  name      String
+  guild     String
+  channel   String
+  discordid String
+  content   String?
+  sent      Boolean?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("messages")
+}
+
+model Submitter {
+  id          Int      @id @default(autoincrement())
+  discordid   String?  @unique
+  submissions Int?
+  dmFlag      Boolean?
+  banned      Boolean?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("submitters")
+}
+
+model Skipper {
+  id        Int      @id @default(autoincrement())
+  user      String?  @unique
+  count     Int?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("skippers")
+}
+
+model NextGif {
+  id        Int      @id @default(autoincrement())
+  value     String?  @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("nextGif")
+}
+
+model FeedbackMsg {
+  id         Int      @id @default(autoincrement())
+  feedbackId String?  @unique
+  messageId  String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@map("feedbackMsgs")
+}
+
+// ---------------------------------------------------------------------------
+// Cache of the list repository (rebuilt from git on a schedule)
+// ---------------------------------------------------------------------------
+
+model CachedLevel {
+  id        Int      @id @default(autoincrement())
+  name      String
+  position  Int
+  filename  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("cache_levels")
+}
+
+model CachedArchivedLevel {
+  id        Int      @id @default(autoincrement())
+  name      String
+  position  Int?
+  filename  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("cache_archived")
+}
+
+model CachedLegacyLevel {
+  id        Int      @id @default(autoincrement())
+  name      String
+  position  Int
+  filename  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("cache_legacy_levels")
+}
+
+model CachedUser {
+  id        Int      @id @default(autoincrement())
+  name      String
+  user_id   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("cache_users")
+}
+
+model CachedPack {
+  id         Int      @id @default(autoincrement())
+  name       String
+  difficulty Int?
+  isDiff     Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@map("cache_packs")
+}

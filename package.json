@@ -1,34 +1,55 @@
 {
     "name": "aredl-bot",
-    "version": "3.12.0",
+    "version": "4.0.0",
     "description": "Discord bot for managing the All Rated Extreme Demons List",
-    "main": "index.js",
+    "private": true,
+    "type": "module",
+    "engines": {
+        "node": ">=24"
+    },
     "scripts": {
         "testenv": "echo '{}' > ./config.json && cp './debug config.json' ./config.json",
-        "start": "node bot.js",
+        "dev": "commandkit dev",
+        "build": "commandkit build",
+        "start": "commandkit start",
+        "typecheck": "tsc --noEmit",
+        "db:generate": "prisma generate",
+        "db:migrate": "prisma migrate dev",
+        "db:deploy": "prisma migrate deploy",
+        "db:import-sqlite": "tsx scripts/import-sqlite.ts",
+        "postinstall": "prisma generate",
         "format": "prettier --write .",
         "lint": "eslint ."
     },
     "author": "Minebox260",
     "license": "ISC",
     "dependencies": {
+        "@commandkit/tasks": "^1.2.6",
         "@napi-rs/canvas": "^1.0.10",
         "@octokit/rest": "20.1.2",
+        "@prisma/adapter-pg": "^7.10.1",
+        "@prisma/client": "^7.10.1",
         "chartjs-node-canvas": "^5.0.0",
+        "commandkit": "^1.2.6",
         "discord.js": "^14.27.0",
         "dotenv": "^18.0.5",
         "exceljs": "^4.4.0",
         "is-url-http": "^2.3.13",
         "log4js": "^6.9.1",
-        "node-cron": "^4.6.0",
         "pako": "^3.0.2",
-        "prettier": "^3.9.9",
-        "sequelize": "^6.37.8",
-        "simple-git": "^4.0.2",
-        "sqlite3": "^6.0.1"
+        "pg": "^8.23.1",
+        "simple-git": "^4.0.2"
     },
     "devDependencies": {
         "@eslint/js": "^10.0.1",
-        "globals": "^17.12.0"
+        "@types/node": "^24.0.0",
+        "@types/pg": "^8.15.6",
+        "eslint": "^10.13.0",
+        "globals": "^17.12.0",
+        "prettier": "^3.9.9",
+        "prisma": "^7.10.1",
+        "tsx": "^4.23.15",
+        "typescript": "~6.0.3",
+        "typescript-eslint": "^8.72.1"
     }
 }

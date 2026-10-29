@@ -1,0 +1,26 @@
+{
+    "compilerOptions": {
+        "target": "ES2023",
+        "lib": ["ES2023"],
+        "module": "Preserve",
+        "moduleResolution": "Bundler",
+        "resolveJsonModule": true,
+        "esModuleInterop": true,
+        "allowImportingTsExtensions": true,
+        "noEmit": true,
+        "strict": true,
+        "skipLibCheck": true,
+        "forceConsistentCasingInFileNames": true,
+        "isolatedModules": true,
+        "verbatimModuleSyntax": true,
+        "types": ["node"],
+        "jsx": "react-jsx",
+        "jsxImportSource": "commandkit",
+        // commandkit (a CJS package) resolves discord.js's CJS typings; use the same
+        // ones everywhere so the types don't clash
+        "paths": {
+            "discord.js": ["./node_modules/discord.js/typings/index.d.ts"]
+        }
+    },
+    "include": ["src", "scripts", "commandkit.config.ts", "prisma.config.ts"]
+}

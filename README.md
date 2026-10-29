@@ -10,7 +10,7 @@ This repository hosts the code for the discord bot made to help record submissio
 
 ## Setup
 
-This bot does not provide any hosting, meaning that you will need to find a way to host it yourself.This bot was made with [discord.js](https://discord.js.org/): You will need to have [NodeJS](https://nodejs.org/en) installed (v16.11.0 or higher) to run it. After node has been installed, to install the dependencies, run `npm install` in the bot's root directory
+This bot does not provide any hosting, meaning that you will need to find a way to host it yourself. It is written in TypeScript using [discord.js](https://discord.js.org/) with the [CommandKit](https://commandkit.dev) framework, and stores its data in [PostgreSQL](https://www.postgresql.org/) through [Prisma](https://www.prisma.io/). You will need [NodeJS](https://nodejs.org/en) v24 or higher and a PostgreSQL database. After node has been installed, run `npm install` in the bot's root directory to install the dependencies (this also generates the Prisma client).
 You will then need to create a config file (an example file is provided in `example_config.json`) and name it `config.json` in the root directory. It should contain the following:
 
 > -   `enableSeparateStaffServer`: Enable this if there is a staff discord server for handling records that is not the public discord server. Will be used to fetch the following channels: `pendingRecordsID`,`priorityRecordsID`,`acceptedRecordsID`,`deniedRecordsID`,`archiveRecordsID`
@@ -37,14 +37,30 @@ You will then need to create a config file (an example file is provided in `exam
 
 > -   `guildMemberAddID`: If welcome messages are enabled, the channel ID in which to send them.
 
-After you have created this config file, rename the `.env.example` file to `.env` edit the values inside:
+After you have created this config file, rename the `.env.example` file to `.env` and edit the values inside:
 
-> -   `token`: The discord bot private token. If you do not know what a token is and how to set up a discord bot, refer to [this discord.js guide](https://discordjs.guide/preparations/setting-up-a-bot-application.html)
-> -   `githubToken`: The github token that will allow the bot to fetch data from and make changes to the github repository of the list. To create one, refer to [this github page](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens)
+> -   `TOKEN`: The discord bot private token. If you do not know what a token is and how to set up a discord bot, refer to [this discord.js guide](https://discordjs.guide/preparations/setting-up-a-bot-application.html)
+> -   `GITHUB_TOKEN`: The github token that will allow the bot to fetch data from and make changes to the github repository of the list. To create one, refer to [this github page](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens)
+> -   `DATABASE_URL`: The connection string of the PostgreSQL database, e.g. `postgresql://user:password@localhost:5432/layoutlist`
 
-Now you can run `node ./bot.js` in the root directory, to register the bot's commands with discord. They will then appear in both the public and (if enabled) staff server.
+Then create the database tables by running `npm run db:deploy`.
+
+> If you are upgrading from the older SQLite version of the bot, import your existing data **before starting the bot for the first time** with `npm run db:import-sqlite -- ./data/database.sqlite`. The list cache (`data/cache.sqlite`) doesn't need to be imported, it is rebuilt from the list repository on startup.
 
 ### Be sure to properly set the command permissions in your discord server settings ("Integrations" tab), so that only staff/admins can use their respective commands. The list of all commands is detailed later on.
 
-You can then run the bot using `node ./index.js`. It will create a SQLite database to store records data (among other things) in a `data/` subfolder
+To run the bot:
+
+> -   `npm run dev`: development mode, with hot reloading
+> -   `npm run build` then `npm start`: production mode
+
+Slash commands are registered automatically when the bot starts, in the public server and (if enabled) the staff server.
+
+### Development
+
+> -   Commands live in `src/app/commands/(category)/`, and events in `src/app/events/<event name>/` (see the [CommandKit docs](https://commandkit.dev/docs)). Prefixing a file with `_` disables it.
+> -   Persistent buttons and modals live in `src/components/` and are registered in `src/components/index.ts`.
+> -   Scheduled tasks live in `src/app/tasks/` and use [`@commandkit/tasks`](https://commandkit.dev/docs); define them with `scheduledTask()` from `src/lib/tasks.ts`. Their schedule is stored in `commandkit-tasks.db`.
+> -   The database schema is in `prisma/schema.prisma`. After changing it, run `npm run db:migrate -- --name <change>` to create a migration.
+> -   `npm run typecheck` and `npm run lint` check the code.
 
