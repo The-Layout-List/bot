@@ -274,7 +274,8 @@ export default {
                 const announcementMsg = await channel.send({
                     embeds: [publicEmbed]
                 });
-                await announcementMsg.crosspost();
+                if (announcementMsg.crosspostable)
+                    await announcementMsg.crosspost();
                 await announcementMsg.react("👍");
                 await announcementMsg.react("👎");
             }

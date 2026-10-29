@@ -176,7 +176,8 @@ export const autocomplete: AutocompleteCommand = async ({ interaction }) => {
                     contains: focused.value.toLowerCase(),
                     mode: "insensitive"
                 }
-            }
+            },
+            orderBy: { position: "asc" }
         });
         return await interaction.respond(
             levels.slice(0, 25).map((level) => ({

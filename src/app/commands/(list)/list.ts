@@ -356,7 +356,7 @@ export const autocomplete: AutocompleteCommand = async ({ interaction }) => {
         return await interaction.respond(
             (subcommand === "fromlegacy"
                 ? await db.cachedLegacyLevel.findMany()
-                : await db.cachedLevel.findMany()
+                : await db.cachedLevel.findMany({ orderBy: { position: "asc" } })
             )
                 .filter((level) =>
                     level.name
@@ -811,9 +811,9 @@ export const chatInput: ChatInputCommand = async ({ interaction }) => {
         logger.info(
             `${interaction.user.tag} (${
                 interaction.user.id
-            }) submitted ${interaction.options.getString(
+            }) updated ${interaction.options.getString(
                 "levelname"
-            )} for ${interaction.options.getString("username", true)}`
+            )}`
         );
         // Reply
         await interaction.editReply(
@@ -1722,7 +1722,6 @@ export const chatInput: ChatInputCommand = async ({ interaction }) => {
         // get the level below the level we want to place
         // +1 because we want the level above this one in the index
         const levelBelow = noDiv[position + 1];
-        logger.log(`Level below: ${levelBelow}`);
 
         // find the index of that level in the real list
         const realBelow = list.indexOf(levelBelow);

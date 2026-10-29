@@ -451,7 +451,8 @@ export const chatInput: ChatInputCommand = async ({ interaction }) => {
             ];
 
             const levelsData = await db.cachedLevel.findMany({
-                select: { name: true, position: true, filename: true }
+                select: { name: true, position: true, filename: true },
+                orderBy: { position: "asc" }
             });
 
             const archivedData = await db.cachedArchivedLevel.findMany({
