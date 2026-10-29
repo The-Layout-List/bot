@@ -1,0 +1,18 @@
+**/.git
+**/.DS_Store
+.github
+.vscode
+node_modules
+dist
+.commandkit
+src/generated
+data
+logs
+.env*
+config.json
+debug config.json
+real config.json
+commandkit-tasks.db*
+commandkit-env.d.ts
+Dockerfile
+compose.yaml
