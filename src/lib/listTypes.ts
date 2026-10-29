@@ -4,7 +4,6 @@ export interface ListRecord {
     user: string;
     link: string;
     percent: number;
-    hz: number;
     enjoyment?: number;
     mobile?: boolean;
     [key: string]: unknown;

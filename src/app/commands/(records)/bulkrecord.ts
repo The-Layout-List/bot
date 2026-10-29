@@ -54,9 +54,7 @@ async function buildEmbed(moderatorID: string, page = 1) {
         .setColor(0xffff00)
         .setTitle(`${session.playerName}'s records`)
         .setDescription(
-            `${session.fps} FPS (${
-                session.mobile ? "Mobile" : "PC"
-            }) | [Video](${session.video})${
+            `${session.mobile ? "Mobile" : "PC"} | [Video](${session.video})${
                 session.discordID ? " | <@" + session.discordID + ">" : ""
             }`
         );
@@ -105,12 +103,6 @@ export const command: CommandData = new SlashCommandBuilder()
                     .setName("completionlink")
                     .setDescription("Link to the completion")
                     .setMaxLength(1024)
-                    .setRequired(true)
-            )
-            .addIntegerOption((option) =>
-                option
-                    .setName("fps")
-                    .setDescription("The FPS you used to complete the level")
                     .setRequired(true)
             )
             .addUserOption((option) =>
@@ -189,11 +181,6 @@ export const command: CommandData = new SlashCommandBuilder()
                     .setName("completionlink")
                     .setDescription("Link to the completion")
                     .setMaxLength(1024)
-            )
-            .addIntegerOption((option) =>
-                option
-                    .setName("fps")
-                    .setDescription("The FPS you used to complete the level")
             )
     )
     .addSubcommand((subcommand) =>
@@ -295,7 +282,6 @@ export const chatInput: ChatInputCommand = async ({ interaction }) => {
         const fileData = interaction.options.getString("code", true);
         const device = interaction.options.getString("device", true);
         const video = interaction.options.getString("completionlink", true);
-        const fps = interaction.options.getInteger("fps", true);
         const userToPing = interaction.options.getUser("discord");
         const note = interaction.options.getString("notes");
 
@@ -335,7 +321,6 @@ export const chatInput: ChatInputCommand = async ({ interaction }) => {
                 playerName: parsedJson.name,
                 video: video,
                 mobile: device == "Mobile" ? true : false,
-                fps: fps,
                 note: note || null,
                 discordID: userToPing?.id || null
             }
@@ -421,7 +406,6 @@ export const chatInput: ChatInputCommand = async ({ interaction }) => {
         const username = interaction.options.getString("username");
         const device = interaction.options.getString("device");
         const video = interaction.options.getString("completionlink");
-        const fps = interaction.options.getInteger("fps");
 
         await db.bulkRecordSession.updateMany({
             where: {
@@ -430,8 +414,7 @@ export const chatInput: ChatInputCommand = async ({ interaction }) => {
             data: {
                 ...(username !== null && { playerName: username }),
                 ...(device !== null && { mobile: device === "Mobile" }),
-                ...(video !== null && { video }),
-                ...(fps !== null && { fps })
+                ...(video !== null && { video })
             }
         });
 

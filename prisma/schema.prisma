@@ -23,7 +23,6 @@ model PendingRecord {
   device          String?
   completionlink  String?
   enjoyment       Int?
-  fps             Int?
   percent         Int?
   raw             String?
   ldm             Int?
@@ -47,7 +46,6 @@ model AcceptedRecord {
   device          String?
   completionlink  String?
   enjoyment       Int?
-  fps             Int?
   percent         Int?
   raw             String?
   ldm             Int?
@@ -72,7 +70,6 @@ model DeniedRecord {
   device          String?
   completionlink  String?
   enjoyment       Int?
-  fps             Int?
   percent         Int?
   raw             String?
   ldm             Int?
@@ -108,7 +105,6 @@ model BulkRecordSession {
   playerName  String
   video       String
   mobile      Boolean
-  fps         Int
   note        String?
   discordID   String?
   createdAt   DateTime @default(now())

@@ -56,7 +56,7 @@ export default {
 
         // Create embed to send with github code
         const githubCode =
-            `{\n\t\t"user": "${user.name}",\n\t\t"link": "${record.completionlink}",\n\t\t"percent": ${record.percent},\n\t\t"hz": ${record.fps}` +
+            `{\n\t\t"user": "${user.name}",\n\t\t"link": "${record.completionlink}",\n\t\t"percent": ${record.percent}` +
             (record.enjoyment !== -1
                 ? `,\n\t\t"enjoyment": ${record.enjoyment}`
                 : "") +
@@ -469,7 +469,6 @@ export default {
                             user: record.username,
                             link: record.completionlink,
                             percent: 100,
-                            hz: 360,
                             ...(record.device === "Mobile" && { mobile: true })
                         },
                         null,
@@ -523,7 +522,6 @@ export default {
                         submitter: record.submitter,
                         levelname: record.levelname,
                         device: record.device,
-                        fps: record.fps,
                         enjoyment: record.enjoyment,
                         percent: record.percent,
                         completionlink: record.completionlink,
