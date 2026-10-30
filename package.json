@@ -46,7 +46,7 @@
         "@types/pg": "^8.15.6",
         "eslint": "^10.13.0",
         "globals": "^17.12.0",
-        "prettier": "^3.9.9",
+        "prettier": "^3.9.10",
         "prisma": "^7.10.1",
         "tsx": "^4.23.15",
         "typescript": "~6.0.3",
