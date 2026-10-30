@@ -25,7 +25,7 @@
     "license": "ISC",
     "dependencies": {
         "@commandkit/tasks": "^1.2.6",
-        "@napi-rs/canvas": "^1.0.10",
+        "@napi-rs/canvas": "^1.0.13",
         "@octokit/rest": "20.1.2",
         "@prisma/adapter-pg": "^7.10.1",
         "@prisma/client": "^7.10.1",
