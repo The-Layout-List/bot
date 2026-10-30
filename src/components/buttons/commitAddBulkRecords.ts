@@ -68,7 +68,6 @@ export default {
                 user: session.playerName,
                 link: session.video,
                 percent: record.percent,
-                hz: session.fps,
                 mobile: session.mobile
             };
 
@@ -270,9 +269,7 @@ export default {
                     },
                     {
                         name: "Device",
-                        value: `${session.mobile ? "Mobile" : "PC"} (${
-                            session.fps
-                        } FPS)`,
+                        value: session.mobile ? "Mobile" : "PC",
                         inline: true
                     },
                     {
@@ -306,7 +303,6 @@ export default {
                         user: session.playerName,
                         link: session.video,
                         percent: record.percent,
-                        hz: session.fps,
                         mobile: session.mobile ? true : false
                     };
                     if (

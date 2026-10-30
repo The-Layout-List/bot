@@ -91,12 +91,6 @@ export const command: CommandData = new SlashCommandBuilder()
             )
             .addIntegerOption((option) =>
                 option
-                    .setName("fps")
-                    .setDescription("The FPS you used to complete the level")
-                    .setRequired(true)
-            )
-            .addIntegerOption((option) =>
-                option
                     .setName("percent")
                     .setDescription("The percent you got on the level")
                     .setRequired(true)
@@ -177,11 +171,6 @@ export const command: CommandData = new SlashCommandBuilder()
                 option
                     .setName("enjoyment")
                     .setDescription("The enjoyment rating on this level (1-10)")
-            )
-            .addIntegerOption((option) =>
-                option
-                    .setName("fps")
-                    .setDescription("The FPS used to complete the level")
             )
             .addIntegerOption((option) =>
                 option
@@ -320,11 +309,6 @@ export const command: CommandData = new SlashCommandBuilder()
             )
             .addIntegerOption((option) =>
                 option
-                    .setName("fps")
-                    .setDescription("The FPS you used to complete the level")
-            )
-            .addIntegerOption((option) =>
-                option
                     .setName("percent")
                     .setDescription("The percent you got on the level")
             )
@@ -423,7 +407,6 @@ export const chatInput: ChatInputCommand = async ({ interaction }) => {
 
         const username = await interaction.options.getString("username", true);
         const device = await interaction.options.getString("device", true);
-        const fps = await interaction.options.getInteger("fps", true);
         const enjoyment = await interaction.options.getInteger("enjoyment");
         const percent = await interaction.options.getInteger("percent", true);
         const linkStr = interaction.options.getString("completionlink", true);
@@ -537,7 +520,7 @@ export const chatInput: ChatInputCommand = async ({ interaction }) => {
         }
 
         const githubCode =
-            `{\n\t\t"user": "${user.name}",\n\t\t"link": "${linkStr}",\n\t\t"percent": ${percent},\n\t\t"hz": ${fps}` +
+            `{\n\t\t"user": "${user.name}",\n\t\t"link": "${linkStr}",\n\t\t"percent": ${percent}` +
             (enjoyment !== null ? `,\n\t\t"enjoyment": ${enjoyment}` : "") +
             (device == "Mobile" ? ',\n\t\t"mobile": true\n}\n' : "\n}");
         const newRecord = JSON.parse(githubCode);
@@ -589,7 +572,7 @@ export const chatInput: ChatInputCommand = async ({ interaction }) => {
                 },
                 {
                     name: "Device",
-                    value: `${device} (${fps} FPS)`,
+                    value: `${device}`,
                     inline: true
                 },
                 {
@@ -636,7 +619,6 @@ export const chatInput: ChatInputCommand = async ({ interaction }) => {
                     levelname: level.name,
                     filename: level.filename,
                     device: device,
-                    fps: fps,
                     enjoyment: enjoyment,
                     percent: percent,
                     completionlink: linkStr,
@@ -839,7 +821,6 @@ export const chatInput: ChatInputCommand = async ({ interaction }) => {
                     user: record.username,
                     link: record.completionlink,
                     percent: record.percent,
-                    hz: record.fps,
                     ...(record.device === "Mobile" && { mobile: true })
                 };
                 if (enjoyment !== null && enjoyment !== undefined)
@@ -918,7 +899,6 @@ export const chatInput: ChatInputCommand = async ({ interaction }) => {
             interaction.options.getInteger("percent") || oldRecord.percent;
         let newEnjoyment =
             interaction.options.getInteger("enjoyment") ?? oldRecord.enjoyment;
-        let newFPS = interaction.options.getInteger("fps") || oldRecord.fps;
         const newDevice =
             interaction.options.getString("device") || oldRecord.device;
         let newNotes =
@@ -935,7 +915,6 @@ export const chatInput: ChatInputCommand = async ({ interaction }) => {
         newModMenu = setNoneToNull(newModMenu);
 
         newPercent = newPercent === -1 ? null : newPercent;
-        newFPS = newFPS === -1 ? null : newFPS;
         newEnjoyment = newEnjoyment === -1 ? null : newEnjoyment;
 
         const notesOption = interaction.options.getString("notes");
@@ -1017,7 +996,7 @@ export const chatInput: ChatInputCommand = async ({ interaction }) => {
         await interaction.editReply(`Writing code...`);
         // Create embed to send with github code
         const githubCode =
-            `{\n\t\t"user": "${user.name}",\n\t\t"link": "${oldRecord.completionlink}",\n\t\t"percent": ${newPercent},\n\t\t"hz": ${newFPS}` +
+            `{\n\t\t"user": "${user.name}",\n\t\t"link": "${oldRecord.completionlink}",\n\t\t"percent": ${newPercent}` +
             (newEnjoyment !== -1 || null
                 ? `,\n\t\t"enjoyment": ${newEnjoyment}`
                 : "") +
@@ -1041,7 +1020,7 @@ export const chatInput: ChatInputCommand = async ({ interaction }) => {
                 },
                 {
                     name: "Device",
-                    value: `${newDevice} (${newFPS} FPS)`,
+                    value: `${newDevice}`,
                     inline: true
                 },
                 {
@@ -1157,7 +1136,6 @@ export const chatInput: ChatInputCommand = async ({ interaction }) => {
                     device: newDevice,
                     completionlink: oldRecord.completionlink,
                     enjoyment: newEnjoyment,
-                    fps: newFPS,
                     percent: newPercent,
                     raw: oldRecord.raw,
                     ldm: oldRecord.ldm, // always 0
@@ -1350,7 +1328,6 @@ export const chatInput: ChatInputCommand = async ({ interaction }) => {
                     user: record.username,
                     link: record.completionlink,
                     percent: record.percent,
-                    hz: record.fps,
                     ...(record.device === "Mobile" && { mobile: true })
                 };
 
@@ -2009,14 +1986,12 @@ export const chatInput: ChatInputCommand = async ({ interaction }) => {
             );
 
         const newuser = interaction.options.getString("newuser") || null;
-        const fps = interaction.options.getInteger("fps") || null;
         const percent = interaction.options.getInteger("percent") || null;
         const enjoyment = interaction.options.getInteger("enjoyment") ?? null;
         const video = interaction.options.getString("completionlink") || null;
         const device = interaction.options.getString("device") || null;
 
         if (newuser !== null) parsedData.records[recordIndex].user = newuser;
-        if (fps !== null) parsedData.records[recordIndex].hz = fps;
         if (percent !== null) parsedData.records[recordIndex].percent = percent;
         if (enjoyment !== null)
             parsedData.records[recordIndex].enjoyment = enjoyment;

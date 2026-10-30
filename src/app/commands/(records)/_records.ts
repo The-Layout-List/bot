@@ -89,12 +89,6 @@ export const command: CommandData = new SlashCommandBuilder()
             )
             .addIntegerOption((option) =>
                 option
-                    .setName("fps")
-                    .setDescription("The FPS you used to complete the level")
-                    .setRequired(true)
-            )
-            .addIntegerOption((option) =>
-                option
                     .setName("percent")
                     .setDescription("The percent you got on the level")
                     .setRequired(true)
@@ -286,10 +280,6 @@ export const chatInput: ChatInputCommand = async ({ interaction }) => {
                     value: `${interaction.options.getString("username", true)}`
                 },
                 {
-                    name: "FPS",
-                    value: `${interaction.options.getInteger("fps", true)}`
-                },
-                {
                     name: "Percent",
                     value: `${interaction.options.getInteger("percent", true)}`
                 },
@@ -371,7 +361,6 @@ export const chatInput: ChatInputCommand = async ({ interaction }) => {
                         "completionlink",
                         true
                     ),
-                    fps: interaction.options.getInteger("fps", true),
                     percent: interaction.options.getInteger("percent", true),
                     enjoyment: -1,
                     raw: "None",
