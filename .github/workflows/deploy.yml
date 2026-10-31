@@ -41,6 +41,12 @@ jobs:
                   ssh -i ~/.ssh/deploy_key -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" \
                       "DEPLOY_PATH='$DEPLOY_PATH' bash -s" <<'EOF'
                   set -o errexit -o nounset -o pipefail
+                  DEPLOY_PATH="$(printf '%s' "$DEPLOY_PATH" | tr -d '\r\n')"
+                  DEPLOY_PATH="${DEPLOY_PATH/#\~/$HOME}"
+                  if [ ! -d "$DEPLOY_PATH" ]; then
+                      echo "DEPLOY_PATH does not exist on the server for user $(whoami) (home: $HOME)" >&2
+                      exit 1
+                  fi
                   cd "$DEPLOY_PATH"
                   git fetch origin main
                   git checkout main
