@@ -232,7 +232,7 @@ model Staff {
 
 model ShiftMember {
   id            Int       @id @default(autoincrement())
-  discordid     String?   @unique
+  discordid     String   @unique
   currentCount  Int       @default(0)
   targetCount   Int       @default(0)
   reminder5Sent Boolean   @default(false)
