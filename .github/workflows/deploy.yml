@@ -1,0 +1,50 @@
+name: Deploy
+
+on:
+    push:
+        branches: [main]
+    workflow_dispatch:
+
+concurrency:
+    group: deploy
+    cancel-in-progress: false
+
+jobs:
+    deploy:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Set up SSH
+              env:
+                  SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+                  SSH_KNOWN_HOSTS: ${{ secrets.SSH_KNOWN_HOSTS }}
+                  SSH_HOST: ${{ secrets.SSH_HOST }}
+                  SSH_PORT: ${{ secrets.SSH_PORT || '22' }}
+              run: |
+                  mkdir -p ~/.ssh
+                  chmod 700 ~/.ssh
+                  printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
+                  chmod 600 ~/.ssh/deploy_key
+                  # Prefer the pinned host key; fall back to trusting whatever the host presents
+                  if [ -n "$SSH_KNOWN_HOSTS" ]; then
+                      printf '%s\n' "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+                  else
+                      ssh-keyscan -p "$SSH_PORT" "$SSH_HOST" > ~/.ssh/known_hosts
+                  fi
+
+            - name: Deploy
+              env:
+                  SSH_HOST: ${{ secrets.SSH_HOST }}
+                  SSH_USER: ${{ secrets.SSH_USER }}
+                  SSH_PORT: ${{ secrets.SSH_PORT || '22' }}
+                  DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+              run: |
+                  ssh -i ~/.ssh/deploy_key -p "$SSH_PORT" "$SSH_USER@$SSH_HOST" \
+                      "DEPLOY_PATH='$DEPLOY_PATH' bash -s" <<'EOF'
+                  set -o errexit -o nounset -o pipefail
+                  cd "$DEPLOY_PATH"
+                  git fetch origin main
+                  git checkout main
+                  git merge --ff-only origin/main
+                  docker compose up -d --build --remove-orphans
+                  docker image prune -f
+                  EOF
