@@ -175,15 +175,26 @@ export const chatInput: ChatInputCommand = async ({ interaction }) => {
             content: `Staff members eligible for shifts have been refreshed. Removed ${deletedCount} members.`
         });
     } else if (subcommand === "view-progress") {
-        const shifts = await db.shiftMember.findMany();
+        const guild = interaction.client.guilds.cache.get(
+            staffGuildId ?? guildId
+        );
+        if (!guild) return await interaction.editReply(":x: Guild not found");
+        const activeIds = await getActiveStaffIds(guild);
+        const shifts = await db.shiftMember.findMany({
+            where: { targetCount: { gt: 0 }, discordId: { in: activeIds } }
+        });
         return interaction.editReply({
             content: shifts
                 .map(
                     (shift) =>
-                        `<@${shift.discordid}> - **${shift.currentCount} / ${shift.targetCount}**${interaction.client.guilds.cache
-                            .get(staffGuildId ?? guildId)
-                            ?.members.cache.get(shift.discordid)
-                            ?.roles.cache.has(config.vacationModeRoleId) ? " (Vacation mode)" : ""}`
+                        `<@${shift.discordid}> - **${shift.currentCount} / ${shift.targetCount}**${
+                            interaction.client.guilds.cache
+                                .get(staffGuildId ?? guildId)
+                                ?.members.cache.get(shift.discordid)
+                                ?.roles.cache.has(config.vacationModeRoleId)
+                                ? " (Vacation mode)"
+                                : ""
+                        }`
                 )
                 .join("\n")
         });
