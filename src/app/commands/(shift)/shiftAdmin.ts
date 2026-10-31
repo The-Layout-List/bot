@@ -181,7 +181,7 @@ export const chatInput: ChatInputCommand = async ({ interaction }) => {
         if (!guild) return await interaction.editReply(":x: Guild not found");
         const activeIds = await getActiveStaffIds(guild);
         const shifts = await db.shiftMember.findMany({
-            where: { targetCount: { gt: 0 }, discordId: { in: activeIds } }
+            where: { targetCount: { gt: 0 }, discordid: { in: activeIds } }
         });
         return interaction.editReply({
             content: shifts
