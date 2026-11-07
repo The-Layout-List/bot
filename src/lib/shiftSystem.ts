@@ -192,6 +192,7 @@ export async function processShiftReminders(client: Client): Promise<string[]> {
     for (const member of members) {
         if (!member.discordid) continue;
         Logger.log(member.discordid)
+        Logger.log(`reminder5Sent: ${member.reminder5Sent} - reminer6Sent: ${member.reminder6Sent}`)
         const currentCount = Number(member.currentCount || 0);
         const targetCount = Number(member.targetCount || 0);
 
