@@ -191,10 +191,12 @@ export async function processShiftReminders(client: Client): Promise<string[]> {
 
     for (const member of members) {
         if (!member.discordid) continue;
+        Logger.log(member.discordid)
         const currentCount = Number(member.currentCount || 0);
         const targetCount = Number(member.targetCount || 0);
 
         const daysSinceStart = (now.getTime() - weekStart.getTime()) / 86400000;
+        Logger.log(daysSinceStart)
         if (daysSinceStart >= 5 && !member.reminder5Sent) {
             try {
                 const user = await client.users.fetch(member.discordid);
