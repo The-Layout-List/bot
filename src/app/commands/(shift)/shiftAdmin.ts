@@ -183,11 +183,16 @@ export const chatInput: ChatInputCommand = async ({ interaction }) => {
         const shifts = await db.shiftMember.findMany({
             where: { targetCount: { gt: 0 }, discordid: { in: activeIds } }
         });
+        const isCompleted = (shift: (typeof shifts)[number]) =>
+            shift.currentCount >= shift.targetCount;
         return interaction.editReply({
             content: shifts
+                .sort((a, b) => Number(isCompleted(a)) - Number(isCompleted(b)))
                 .map(
                     (shift) =>
                         `<@${shift.discordid}> - **${shift.currentCount} / ${shift.targetCount}**${
+                            isCompleted(shift) ? " *(Completed)*" : ""
+                        }${
                             interaction.client.guilds.cache
                                 .get(staffGuildId ?? guildId)
                                 ?.members.cache.get(shift.discordid)
