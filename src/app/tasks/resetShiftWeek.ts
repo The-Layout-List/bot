@@ -7,7 +7,7 @@ const { shiftLogsChannelId, staffGuildId, guildId } = config;
 
 export default scheduledTask({
     name: "resetShiftWeek",
-    schedule: "0 0 * * 2",
+    schedule: "0 1 * * 1",
     async execute(client) {
         const guild = client.guilds.cache.get(staffGuildId ?? guildId);
         if (!guild) return;
