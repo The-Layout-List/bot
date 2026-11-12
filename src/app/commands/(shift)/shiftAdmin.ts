@@ -14,7 +14,8 @@ import {
     setCurrentProgress,
     processShiftReminders,
     getActiveStaffIds,
-    endShiftWeek
+    endShiftWeek,
+    getShiftHistory
 } from "../../../lib/shiftSystem";
 import { config, commandGuilds } from "../../../lib/config";
 import { db } from "../../../lib/db";
@@ -94,7 +95,21 @@ export const command: CommandData = new SlashCommandBuilder()
                     .setRequired(true)
             )
     )
+    .addSubcommand((subcommand) =>
+        subcommand
+            .setName("history")
+            .setDescription("View the shift history of a staff member")
+            .addUserOption((option) =>
+                option
+                    .setName("member")
+                    .setDescription("Staff member to view")
+                    .setRequired(true)
+            )
+    )
     .toJSON();
+
+// Keep the reply under Discord's 2000 character message limit
+const MAX_HISTORY_SHOWN = 250;
 
 export const metadata: CommandMetadata = { guilds: commandGuilds() };
 
@@ -102,7 +117,7 @@ export const chatInput: ChatInputCommand = async ({ interaction }) => {
     if (!interaction.inCachedGuild()) return;
     const subcommand = interaction.options.getSubcommand();
     await interaction.deferReply({
-        flags: ["view-member", "view-progress"].includes(subcommand)
+        flags: ["view-member", "view-progress", "history"].includes(subcommand)
             ? MessageFlags.Ephemeral
             : undefined
     });
@@ -214,6 +229,27 @@ export const chatInput: ChatInputCommand = async ({ interaction }) => {
             content: shift
                 ? `<@${shift.discordid}> - **${shift.currentCount} / ${shift.targetCount}**`
                 : `No shift data found for <@${member.id}>.`
+        });
+    } else if (subcommand === "history") {
+        const member = interaction.options.getUser("member", true);
+        const history = await getShiftHistory(member.id);
+        if (history.length === 0) {
+            return interaction.editReply({
+                content: `No shift history found for <@${member.id}>.`,
+                allowedMentions: { parse: [] }
+            });
+        }
+        const shown = history.slice(-MAX_HISTORY_SHOWN);
+        const results = shown
+            .map((shift) =>
+                shift.completedCount >= shift.targetCount ? "✅" : "❌"
+            )
+            .join(" => ");
+        return interaction.editReply({
+            content: `__Shift history for <@${member.id}>:__\n\n${
+                history.length > shown.length ? "... => " : ""
+            }${results}\n*(${history.length} total)*`,
+            allowedMentions: { parse: [] }
         });
     }
 };
