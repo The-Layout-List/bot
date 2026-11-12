@@ -1,6 +1,19 @@
 import fs from "node:fs";
 import path from "node:path";
 
+export interface ShiftEloConfig {
+    /** Elo every staff member starts with */
+    starting: number;
+    /** Elo gained for completing a weekly shift */
+    completedGain: number;
+    /** Elo lost for missing a weekly shift */
+    missedLoss: number;
+    /** Lowest possible elo (also applies to total elo) */
+    min: number;
+    /** Highest possible elo (does not apply to total elo) */
+    max: number;
+}
+
 export interface BotConfig {
     debug: boolean;
 
@@ -50,6 +63,8 @@ export interface BotConfig {
     shiftLogsChannelId: string;
     leaderShiftLogsChannelId: string;
     vacationModeRoleId: string;
+
+    shiftElo: ShiftEloConfig;
 }
 
 // config.json is read at runtime (rather than bundled) so that switching

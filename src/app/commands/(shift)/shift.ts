@@ -4,7 +4,11 @@ import type {
     CommandData,
     CommandMetadata
 } from "commandkit";
-import { getCurrentProgress } from "../../../lib/shiftSystem";
+import {
+    formatElo,
+    getCurrentProgress,
+    getElo
+} from "../../../lib/shiftSystem";
 import { config, commandGuilds } from "../../../lib/config";
 
 const { vacationModeRoleId } = config;
@@ -16,6 +20,11 @@ export const command: CommandData = new SlashCommandBuilder()
         subcommand
             .setName("progress")
             .setDescription("Check your shift progress")
+    )
+    .addSubcommand((subcommand) =>
+        subcommand
+            .setName("elo")
+            .setDescription("Check your current shift elo and total elo")
     )
     .toJSON();
 
@@ -31,6 +40,11 @@ export const chatInput: ChatInputCommand = async ({ interaction }) => {
         const progress = await getCurrentProgress(interaction.user.id);
         return interaction.editReply({
             content: `Shift progress for <@${interaction.user.id}>: ${progress.currentCount}/${progress.targetCount} records completed${interaction.member.roles.cache.has(vacationModeRoleId) ? " (vacation mode enabled)" : ""}`
+        });
+    } else if (interaction.options.getSubcommand() === "elo") {
+        const { elo, totalElo } = await getElo(interaction.user.id);
+        return interaction.editReply({
+            content: `Shift elo for <@${interaction.user.id}>:\nElo: **${formatElo(elo)}**\nTotal elo: **${formatElo(totalElo)}**`
         });
     }
 };

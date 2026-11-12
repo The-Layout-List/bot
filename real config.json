@@ -46,5 +46,13 @@
     "hqListStaffRoleId": "1541226281373540484",
     "shiftLogsChannelId": "1563619992623259719",
     "leaderShiftLogsChannelId": "1563622353508896909",
-    "vacationModeRoleId": "1564073302060826695"
+    "vacationModeRoleId": "1564073302060826695",
+
+    "shiftElo": {
+        "starting": 20,
+        "completedGain": 3,
+        "missedLoss": 4.5,
+        "min": 0,
+        "max": 35
+    }
 }
