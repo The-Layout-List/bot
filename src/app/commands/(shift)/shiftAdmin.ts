@@ -173,6 +173,7 @@ export const chatInput: ChatInputCommand = async ({ interaction }) => {
             "view-progress",
             "elo",
             "elo-lb",
+            "elo-set",
             "history"
         ].includes(subcommand)
             ? MessageFlags.Ephemeral
@@ -238,7 +239,7 @@ export const chatInput: ChatInputCommand = async ({ interaction }) => {
         const { count: deletedCount } = await db.shiftMember.deleteMany({
             where: {
                 discordid: {
-                    notIn: await getActiveStaffIds(shiftGuild)
+                    notIn: await getRoleMembers(shiftGuild)
                 }
             }
         });

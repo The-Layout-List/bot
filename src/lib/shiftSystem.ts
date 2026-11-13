@@ -117,7 +117,7 @@ export interface EloChange {
 
 function getEloDmMessage(change: EloChange) {
     const gainedOrLost = change.eloChange >= 0 ? "gained" : "lost";
-    const amount = formatElo(Math.abs(change.eloChange));
+    const amount = formatElo(Math.abs(change.totalEloChange));
     if (change.completed) {
         return `You completed your shift this week! You ${gainedOrLost} **${amount} elo**. Your elo is now **${formatElo(change.newElo)}**.`;
     }
