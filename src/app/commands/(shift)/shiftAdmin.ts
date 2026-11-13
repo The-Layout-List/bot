@@ -124,7 +124,7 @@ export const command: CommandData = new SlashCommandBuilder()
     )
     .addSubcommand((subcommand) =>
         subcommand
-            .setName("elo-set")
+            .setName("set-elo")
             .setDescription("Set a staff member's shift elo")
             .addUserOption((option) =>
                 option
@@ -173,7 +173,7 @@ export const chatInput: ChatInputCommand = async ({ interaction }) => {
             "view-progress",
             "elo",
             "elo-lb",
-            "elo-set",
+            "set-elo",
             "history"
         ].includes(subcommand)
             ? MessageFlags.Ephemeral
@@ -294,7 +294,7 @@ export const chatInput: ChatInputCommand = async ({ interaction }) => {
         return interaction.editReply({
             content: `Shift elo for <@${member.id}>:\nElo: **${formatElo(elo)}**\nTotal elo: **${formatElo(totalElo)}**`
         });
-    } else if (subcommand === "elo-set") {
+    } else if (subcommand === "set-elo") {
         const member = interaction.options.getUser("member", true);
         const elo = interaction.options.getNumber("elo", true);
         const total = interaction.options.getNumber("total");
