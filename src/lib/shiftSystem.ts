@@ -227,11 +227,49 @@ export async function processShiftReminders(client: Client): Promise<string[]> {
     return notifications;
 }
 
+export async function recordShiftHistory(activeStaffIds: string[]) {
+    const assignedShifts = await db.shiftMember.findMany({
+        where: {
+            discordid: { in: activeStaffIds },
+            targetCount: { gt: 0 }
+        }
+    });
+    if (assignedShifts.length === 0) return 0;
+
+    const { count } = await db.shiftHistory.createMany({
+        data: assignedShifts.map((shift) => ({
+            discordid: shift.discordid,
+            completedCount: shift.currentCount,
+            targetCount: shift.targetCount,
+            weekStartedAt: shift.weekStartedAt
+        })),
+        // Avoid recording the same week twice if a week is ended more than once
+        skipDuplicates: true
+    });
+    return count;
+}
+
+export async function getShiftHistory(userId: string) {
+    return await db.shiftHistory.findMany({
+        where: { discordid: userId },
+        orderBy: { endedAt: "asc" }
+    });
+}
+
 export async function endShiftWeek(client: Client) {
     const guild = getShiftGuild(client);
+    const activeStaffIds = await getActiveStaffIds(guild);
+
+    try {
+        await recordShiftHistory(activeStaffIds);
+    } catch (e) {
+        Logger.error("Failed to record shift history");
+        Logger.error(e);
+    }
+
     const uncompletedShifts = await db.shiftMember.findMany({
         where: {
-            discordid: { in: await getActiveStaffIds(guild) },
+            discordid: { in: activeStaffIds },
             currentCount: { lt: db.shiftMember.fields.targetCount }
         }
     });

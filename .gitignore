@@ -12,3 +12,4 @@ dist
 src/generated
 commandkit-env.d.ts
 commandkit-tasks.db*
+*.db
