@@ -49,7 +49,7 @@
     "vacationModeRoleId": "1564073302060826695",
 
     "shiftElo": {
-        "starting": 20,
+        "starting": 25,
         "completedGain": 3,
         "missedLoss": 4.5,
         "min": 0,
