@@ -20,6 +20,8 @@ import {
     getElo,
     setElo,
     formatElo,
+    formatStreak,
+    setStreak,
     getShiftHistory
 } from "../../../lib/shiftSystem";
 import { config, commandGuilds } from "../../../lib/config";
@@ -103,7 +105,9 @@ export const command: CommandData = new SlashCommandBuilder()
     .addSubcommand((subcommand) =>
         subcommand
             .setName("elo")
-            .setDescription("View a staff member's shift elo and total elo")
+            .setDescription(
+                "View a staff member's shift elo, total elo and streak"
+            )
             .addUserOption((option) =>
                 option
                     .setName("member")
@@ -154,6 +158,24 @@ export const command: CommandData = new SlashCommandBuilder()
     )
     .addSubcommand((subcommand) =>
         subcommand
+            .setName("set-streak")
+            .setDescription("Set a staff member's shift streak")
+            .addUserOption((option) =>
+                option
+                    .setName("member")
+                    .setDescription("Staff member to update")
+                    .setRequired(true)
+            )
+            .addIntegerOption((option) =>
+                option
+                    .setName("streak")
+                    .setDescription("New streak (shifts completed in a row)")
+                    .setMinValue(0)
+                    .setRequired(true)
+            )
+    )
+    .addSubcommand((subcommand) =>
+        subcommand
             .setName("elo-lb")
             .setDescription("View the shift elo of all staff members")
     )
@@ -174,6 +196,7 @@ export const chatInput: ChatInputCommand = async ({ interaction }) => {
             "elo",
             "elo-lb",
             "set-elo",
+            "set-streak",
             "history"
         ].includes(subcommand)
             ? MessageFlags.Ephemeral
@@ -290,9 +313,9 @@ export const chatInput: ChatInputCommand = async ({ interaction }) => {
         });
     } else if (subcommand === "elo") {
         const member = interaction.options.getUser("member", true);
-        const { elo, totalElo } = await getElo(member.id);
+        const { elo, totalElo, streak } = await getElo(member.id);
         return interaction.editReply({
-            content: `Shift elo for <@${member.id}>:\nElo: **${formatElo(elo)}**\nTotal elo: **${formatElo(totalElo)}**`
+            content: `Shift elo for <@${member.id}>:\nElo: **${formatElo(elo)}**\nTotal elo: **${formatElo(totalElo)}**\nStreak: **${formatStreak(streak)}**`
         });
     } else if (subcommand === "set-elo") {
         const member = interaction.options.getUser("member", true);
@@ -302,6 +325,14 @@ export const chatInput: ChatInputCommand = async ({ interaction }) => {
         return interaction.editReply({
             allowedMentions: { parse: [] },
             content: `Shift elo for <@${member.id}> has been set to **${formatElo(updated.elo)}** (total elo: **${formatElo(updated.totalElo)}**).`
+        });
+    } else if (subcommand === "set-streak") {
+        const member = interaction.options.getUser("member", true);
+        const streak = interaction.options.getInteger("streak", true);
+        const updated = await setStreak(member.id, streak);
+        return interaction.editReply({
+            allowedMentions: { parse: [] },
+            content: `Shift streak for <@${member.id}> has been set to **${formatStreak(updated.streak)}**.`
         });
     } else if (subcommand === "elo-lb") {
         const guild = interaction.client.guilds.cache.get(
@@ -321,7 +352,8 @@ export const chatInput: ChatInputCommand = async ({ interaction }) => {
             .map((userId) => ({
                 userId,
                 elo: eloByUser.get(userId)?.elo ?? shiftElo.starting,
-                totalElo: eloByUser.get(userId)?.totalElo ?? shiftElo.starting
+                totalElo: eloByUser.get(userId)?.totalElo ?? shiftElo.starting,
+                streak: eloByUser.get(userId)?.streak ?? 0
             }))
             .sort((a, b) => b.elo - a.elo || b.totalElo - a.totalElo);
 
@@ -333,7 +365,7 @@ export const chatInput: ChatInputCommand = async ({ interaction }) => {
 
         const lines = entries.map(
             (entry, index) =>
-                `**${index + 1}.** <@${entry.userId}> - **${formatElo(entry.elo)}** elo (total: ${formatElo(entry.totalElo)})`
+                `**${index + 1}.** <@${entry.userId}> - **${formatElo(entry.elo)}** elo (total: ${formatElo(entry.totalElo)}) ${formatStreak(entry.streak)}`
         );
         // Embed descriptions are limited to 4096 characters
         let description = "";

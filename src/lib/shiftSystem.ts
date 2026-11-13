@@ -82,7 +82,24 @@ export function formatElo(value: number) {
 
 export async function getElo(userId: string) {
     const profile = await ensureShiftMember(userId);
-    return { elo: profile.elo, totalElo: profile.totalElo };
+    return {
+        elo: profile.elo,
+        totalElo: profile.totalElo,
+        streak: profile.streak
+    };
+}
+
+/** Formats a shift streak for display, e.g. "🔥 5" */
+export function formatStreak(streak: number) {
+    return `🔥 ${streak}`;
+}
+
+export async function setStreak(userId: string, streak: number) {
+    const profile = await ensureShiftMember(userId);
+    return await db.shiftMember.update({
+        where: { id: profile.id },
+        data: { streak: Math.max(0, Math.floor(streak)) }
+    });
 }
 
 export async function setElo(
@@ -113,20 +130,25 @@ export interface EloChange {
     /** Change actually applied to the total elo (after clamping) */
     totalEloChange: number;
     newTotalElo: number;
+    /** Shift streak after this week (0 if the shift was missed) */
+    newStreak: number;
 }
 
 function getEloDmMessage(change: EloChange) {
     const gainedOrLost = change.eloChange >= 0 ? "gained" : "lost";
     const amount = formatElo(Math.abs(change.totalEloChange));
+    const streak = `Your new streak is **${formatStreak(change.newStreak)}**.`;
     if (change.completed) {
-        return `You completed your shift this week! You ${gainedOrLost} **${amount} elo**. Your elo is now **${formatElo(change.newElo)}**.`;
+        return `You completed your shift this week! You ${gainedOrLost} **${amount} elo**. Your elo is now **${formatElo(change.newElo)}**. ${streak}`;
     }
-    return `You missed your shift this week (completed **${change.currentCount}/${change.targetCount}** records). You ${gainedOrLost} **${amount} elo**. Your elo is now **${formatElo(change.newElo)}**.`;
+    return `You missed your shift this week (completed **${change.currentCount}/${change.targetCount}** records). You ${gainedOrLost} **${amount} elo**. Your elo is now **${formatElo(change.newElo)}**. ${streak}`;
 }
 
 /**
  * Awards elo to every active staff member who had a shift this week
- * (gain for completing it, loss for missing it) and DMs them the result.
+ * (gain for completing it, loss for missing it), updates their shift streak
+ * (incremented for completing it, reset to 0 for missing it) and DMs them
+ * the result.
  * Must be called before the week's counts are reset.
  */
 export async function applyShiftElo(client: Client): Promise<EloChange[]> {
@@ -146,10 +168,11 @@ export async function applyShiftElo(client: Client): Promise<EloChange[]> {
             : -shiftElo.missedLoss;
         const newElo = clampElo(member.elo + delta);
         const newTotalElo = clampTotalElo(member.totalElo + delta);
+        const newStreak = completed ? member.streak + 1 : 0;
 
         await db.shiftMember.update({
             where: { id: member.id },
-            data: { elo: newElo, totalElo: newTotalElo }
+            data: { elo: newElo, totalElo: newTotalElo, streak: newStreak }
         });
 
         const change: EloChange = {
@@ -160,7 +183,8 @@ export async function applyShiftElo(client: Client): Promise<EloChange[]> {
             eloChange: roundElo(newElo - member.elo),
             newElo,
             totalEloChange: roundElo(newTotalElo - member.totalElo),
-            newTotalElo
+            newTotalElo,
+            newStreak
         };
         changes.push(change);
 

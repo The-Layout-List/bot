@@ -241,6 +241,8 @@ model ShiftMember {
   // configured min/max; `totalElo` is only floored at the configured min.
   elo           Float     @default(20)
   totalElo      Float     @default(20)
+  // Number of shifts completed in a row (reset to 0 when a shift is missed)
+  streak        Int       @default(0)
   weekStartedAt DateTime?
   lastUpdated   DateTime?
   createdAt     DateTime  @default(now())
