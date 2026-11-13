@@ -239,8 +239,8 @@ model ShiftMember {
   reminder6Sent Boolean   @default(false)
   // Shift elo (see `shiftElo` in config.json). `elo` is clamped between the
   // configured min/max; `totalElo` is only floored at the configured min.
-  elo           Float     @default(20)
-  totalElo      Float     @default(20)
+  elo           Float     @default(25)
+  totalElo      Float     @default(25)
   // Number of shifts completed in a row (reset to 0 when a shift is missed)
   streak        Int       @default(0)
   weekStartedAt DateTime?
