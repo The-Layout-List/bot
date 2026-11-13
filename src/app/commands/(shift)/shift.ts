@@ -6,6 +6,7 @@ import type {
 } from "commandkit";
 import {
     formatElo,
+    formatStreak,
     getCurrentProgress,
     getElo
 } from "../../../lib/shiftSystem";
@@ -24,7 +25,9 @@ export const command: CommandData = new SlashCommandBuilder()
     .addSubcommand((subcommand) =>
         subcommand
             .setName("elo")
-            .setDescription("Check your current shift elo and total elo")
+            .setDescription(
+                "Check your current shift elo, total elo and streak"
+            )
     )
     .toJSON();
 
@@ -42,9 +45,9 @@ export const chatInput: ChatInputCommand = async ({ interaction }) => {
             content: `Shift progress for <@${interaction.user.id}>: ${progress.currentCount}/${progress.targetCount} records completed${interaction.member.roles.cache.has(vacationModeRoleId) ? " (vacation mode enabled)" : ""}`
         });
     } else if (interaction.options.getSubcommand() === "elo") {
-        const { elo, totalElo } = await getElo(interaction.user.id);
+        const { elo, totalElo, streak } = await getElo(interaction.user.id);
         return interaction.editReply({
-            content: `Shift elo for <@${interaction.user.id}>:\nElo: **${formatElo(elo)}**\nTotal elo: **${formatElo(totalElo)}**`
+            content: `Shift elo for <@${interaction.user.id}>:\nElo: **${formatElo(elo)}**\nTotal elo: **${formatElo(totalElo)}**\nStreak: **${formatStreak(streak)}**`
         });
     }
 };
