@@ -9,10 +9,11 @@ const {
     staffGuildId,
     hqListStaffRoleId,
     leaderShiftLogsChannelId,
-    vacationModeRoleId
+    vacationModeRoleId,
+    shiftElo
 } = config;
 
-async function getRoleMembers(guild: Guild): Promise<string[]> {
+export async function getRoleMembers(guild: Guild): Promise<string[]> {
     const role = guild.roles.cache.get(hqListStaffRoleId);
     if (!role) return [];
     return [...role.members.values()].map((member) => member.user.id);
@@ -48,9 +49,131 @@ export async function ensureShiftMember(userId: string) {
             targetCount: 0,
             reminder5Sent: false,
             reminder6Sent: false,
+            elo: shiftElo.starting,
+            totalElo: shiftElo.starting,
             weekStartedAt: new Date()
         }
     });
+}
+
+// ---------------------------------------------------------------------------
+// Shift elo
+// ---------------------------------------------------------------------------
+
+/** Rounds to 2 decimals to avoid floating point drift (e.g. 0.1 + 0.2) */
+function roundElo(value: number) {
+    return Math.round(value * 100) / 100;
+}
+
+/** Clamps a regular elo value between the configured min and max */
+export function clampElo(value: number) {
+    return roundElo(Math.min(shiftElo.max, Math.max(shiftElo.min, value)));
+}
+
+/** Clamps a total elo value (only has a minimum, no maximum) */
+export function clampTotalElo(value: number) {
+    return roundElo(Math.max(shiftElo.min, value));
+}
+
+/** Formats an elo value for display, e.g. 15.5 or 23 */
+export function formatElo(value: number) {
+    return String(roundElo(value));
+}
+
+export async function getElo(userId: string) {
+    const profile = await ensureShiftMember(userId);
+    return { elo: profile.elo, totalElo: profile.totalElo };
+}
+
+export async function setElo(
+    userId: string,
+    elo: number,
+    totalElo?: number | null
+) {
+    const profile = await ensureShiftMember(userId);
+    return await db.shiftMember.update({
+        where: { id: profile.id },
+        data: {
+            elo: clampElo(elo),
+            ...(totalElo !== null && totalElo !== undefined
+                ? { totalElo: clampTotalElo(totalElo) }
+                : {})
+        }
+    });
+}
+
+export interface EloChange {
+    userId: string;
+    completed: boolean;
+    currentCount: number;
+    targetCount: number;
+    /** Change actually applied to the regular elo (after clamping) */
+    eloChange: number;
+    newElo: number;
+    /** Change actually applied to the total elo (after clamping) */
+    totalEloChange: number;
+    newTotalElo: number;
+}
+
+function getEloDmMessage(change: EloChange) {
+    const gainedOrLost = change.eloChange >= 0 ? "gained" : "lost";
+    const amount = formatElo(Math.abs(change.totalEloChange));
+    if (change.completed) {
+        return `You completed your shift this week! You ${gainedOrLost} **${amount} elo**. Your elo is now **${formatElo(change.newElo)}**.`;
+    }
+    return `You missed your shift this week (completed **${change.currentCount}/${change.targetCount}** records). You ${gainedOrLost} **${amount} elo**. Your elo is now **${formatElo(change.newElo)}**.`;
+}
+
+/**
+ * Awards elo to every active staff member who had a shift this week
+ * (gain for completing it, loss for missing it) and DMs them the result.
+ * Must be called before the week's counts are reset.
+ */
+export async function applyShiftElo(client: Client): Promise<EloChange[]> {
+    const guild = getShiftGuild(client);
+    const members = await db.shiftMember.findMany({
+        where: {
+            discordid: { in: await getActiveStaffIds(guild) },
+            targetCount: { gt: 0 }
+        }
+    });
+
+    const changes: EloChange[] = [];
+    for (const member of members) {
+        const completed = member.currentCount >= member.targetCount;
+        const delta = completed
+            ? shiftElo.completedGain
+            : -shiftElo.missedLoss;
+        const newElo = clampElo(member.elo + delta);
+        const newTotalElo = clampTotalElo(member.totalElo + delta);
+
+        await db.shiftMember.update({
+            where: { id: member.id },
+            data: { elo: newElo, totalElo: newTotalElo }
+        });
+
+        const change: EloChange = {
+            userId: member.discordid,
+            completed,
+            currentCount: member.currentCount,
+            targetCount: member.targetCount,
+            eloChange: roundElo(newElo - member.elo),
+            newElo,
+            totalEloChange: roundElo(newTotalElo - member.totalElo),
+            newTotalElo
+        };
+        changes.push(change);
+
+        try {
+            const user = await client.users.fetch(member.discordid);
+            await user.send(getEloDmMessage(change));
+        } catch (e) {
+            Logger.error(`Failed to send elo DM to user ${member.discordid}`);
+            Logger.error(e);
+        }
+    }
+
+    return changes;
 }
 
 function getReminderMessage(completedCount: number, pendingCount: number) {
@@ -258,6 +381,7 @@ export async function getShiftHistory(userId: string) {
 
 export async function endShiftWeek(client: Client) {
     const guild = getShiftGuild(client);
+    await applyShiftElo(client);
     const activeStaffIds = await getActiveStaffIds(guild);
 
     try {

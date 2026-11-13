@@ -1,7 +1,8 @@
 import {
     SlashCommandBuilder,
     PermissionFlagsBits,
-    MessageFlags
+    MessageFlags,
+    EmbedBuilder
 } from "discord.js";
 import type {
     ChatInputCommand,
@@ -15,12 +16,16 @@ import {
     processShiftReminders,
     getActiveStaffIds,
     endShiftWeek,
+    getRoleMembers,
+    getElo,
+    setElo,
+    formatElo,
     getShiftHistory
 } from "../../../lib/shiftSystem";
 import { config, commandGuilds } from "../../../lib/config";
 import { db } from "../../../lib/db";
 
-const { staffGuildId, guildId, shiftLogsChannelId } = config;
+const { staffGuildId, guildId, shiftLogsChannelId, shiftElo } = config;
 
 export const command: CommandData = new SlashCommandBuilder()
     .setName("shift-admin")
@@ -97,6 +102,17 @@ export const command: CommandData = new SlashCommandBuilder()
     )
     .addSubcommand((subcommand) =>
         subcommand
+            .setName("elo")
+            .setDescription("View a staff member's shift elo and total elo")
+            .addUserOption((option) =>
+                option
+                    .setName("member")
+                    .setDescription("Staff member to view")
+                    .setRequired(true)
+            )
+    )
+    .addSubcommand((subcommand) =>
+        subcommand
             .setName("history")
             .setDescription("View the shift history of a staff member")
             .addUserOption((option) =>
@@ -105,6 +121,41 @@ export const command: CommandData = new SlashCommandBuilder()
                     .setDescription("Staff member to view")
                     .setRequired(true)
             )
+    )
+    .addSubcommand((subcommand) =>
+        subcommand
+            .setName("set-elo")
+            .setDescription("Set a staff member's shift elo")
+            .addUserOption((option) =>
+                option
+                    .setName("member")
+                    .setDescription("Staff member to update")
+                    .setRequired(true)
+            )
+            .addNumberOption((option) =>
+                option
+                    .setName("elo")
+                    .setDescription(
+                        `New elo (${shiftElo.min} to ${shiftElo.max})`
+                    )
+                    .setMinValue(shiftElo.min)
+                    .setMaxValue(shiftElo.max)
+                    .setRequired(true)
+            )
+            .addNumberOption((option) =>
+                option
+                    .setName("total")
+                    .setDescription(
+                        "New total elo (leave empty to keep the current total)"
+                    )
+                    .setMinValue(shiftElo.min)
+                    .setRequired(false)
+            )
+    )
+    .addSubcommand((subcommand) =>
+        subcommand
+            .setName("elo-lb")
+            .setDescription("View the shift elo of all staff members")
     )
     .toJSON();
 
@@ -117,7 +168,14 @@ export const chatInput: ChatInputCommand = async ({ interaction }) => {
     if (!interaction.inCachedGuild()) return;
     const subcommand = interaction.options.getSubcommand();
     await interaction.deferReply({
-        flags: ["view-member", "view-progress", "history"].includes(subcommand)
+        flags: [
+            "view-member",
+            "view-progress",
+            "elo",
+            "elo-lb",
+            "set-elo",
+            "history"
+        ].includes(subcommand)
             ? MessageFlags.Ephemeral
             : undefined
     });
@@ -181,7 +239,7 @@ export const chatInput: ChatInputCommand = async ({ interaction }) => {
         const { count: deletedCount } = await db.shiftMember.deleteMany({
             where: {
                 discordid: {
-                    notIn: await getActiveStaffIds(shiftGuild)
+                    notIn: await getRoleMembers(shiftGuild)
                 }
             }
         });
@@ -229,6 +287,70 @@ export const chatInput: ChatInputCommand = async ({ interaction }) => {
             content: shift
                 ? `<@${shift.discordid}> - **${shift.currentCount} / ${shift.targetCount}**`
                 : `No shift data found for <@${member.id}>.`
+        });
+    } else if (subcommand === "elo") {
+        const member = interaction.options.getUser("member", true);
+        const { elo, totalElo } = await getElo(member.id);
+        return interaction.editReply({
+            content: `Shift elo for <@${member.id}>:\nElo: **${formatElo(elo)}**\nTotal elo: **${formatElo(totalElo)}**`
+        });
+    } else if (subcommand === "set-elo") {
+        const member = interaction.options.getUser("member", true);
+        const elo = interaction.options.getNumber("elo", true);
+        const total = interaction.options.getNumber("total");
+        const updated = await setElo(member.id, elo, total);
+        return interaction.editReply({
+            allowedMentions: { parse: [] },
+            content: `Shift elo for <@${member.id}> has been set to **${formatElo(updated.elo)}** (total elo: **${formatElo(updated.totalElo)}**).`
+        });
+    } else if (subcommand === "elo-lb") {
+        const guild = interaction.client.guilds.cache.get(
+            staffGuildId ?? guildId
+        );
+        if (!guild) return await interaction.editReply(":x: Guild not found");
+        const staffIds = await getRoleMembers(guild);
+        const profiles = await db.shiftMember.findMany({
+            where: { discordid: { in: staffIds } }
+        });
+        const eloByUser = new Map(
+            profiles.map((profile) => [profile.discordid, profile])
+        );
+        // Staff members without a shift profile yet are shown with the
+        // starting elo (a profile is created the first time it's needed)
+        const entries = staffIds
+            .map((userId) => ({
+                userId,
+                elo: eloByUser.get(userId)?.elo ?? shiftElo.starting,
+                totalElo: eloByUser.get(userId)?.totalElo ?? shiftElo.starting
+            }))
+            .sort((a, b) => b.elo - a.elo || b.totalElo - a.totalElo);
+
+        if (entries.length === 0) {
+            return interaction.editReply({
+                content: "No staff members found."
+            });
+        }
+
+        const lines = entries.map(
+            (entry, index) =>
+                `**${index + 1}.** <@${entry.userId}> - **${formatElo(entry.elo)}** elo (total: ${formatElo(entry.totalElo)})`
+        );
+        // Embed descriptions are limited to 4096 characters
+        let description = "";
+        for (const line of lines) {
+            if (description.length + line.length + 1 > 4000) {
+                description += "\n...";
+                break;
+            }
+            description += (description ? "\n" : "") + line;
+        }
+
+        return interaction.editReply({
+            embeds: [
+                new EmbedBuilder()
+                    .setTitle("Shift elo leaderboard")
+                    .setDescription(description)
+            ]
         });
     } else if (subcommand === "history") {
         const member = interaction.options.getUser("member", true);

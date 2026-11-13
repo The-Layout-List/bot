@@ -237,6 +237,10 @@ model ShiftMember {
   targetCount   Int       @default(0)
   reminder5Sent Boolean   @default(false)
   reminder6Sent Boolean   @default(false)
+  // Shift elo (see `shiftElo` in config.json). `elo` is clamped between the
+  // configured min/max; `totalElo` is only floored at the configured min.
+  elo           Float     @default(20)
+  totalElo      Float     @default(20)
   weekStartedAt DateTime?
   lastUpdated   DateTime?
   createdAt     DateTime  @default(now())
