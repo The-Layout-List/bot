@@ -249,6 +249,19 @@ model ShiftMember {
   @@map("shiftMembers")
 }
 
+model ShiftHistory {
+  id             Int       @id @default(autoincrement())
+  discordid      String
+  completedCount Int
+  targetCount    Int
+  weekStartedAt  DateTime?
+  endedAt        DateTime  @default(now())
+
+  @@unique([discordid, weekStartedAt])
+  @@index([discordid, endedAt])
+  @@map("shiftHistory")
+}
+
 model ShiftState {
   id            Int       @id @default(1)
   pendingCount  Int       @default(0)
