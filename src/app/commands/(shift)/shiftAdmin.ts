@@ -4,10 +4,11 @@ import {
     MessageFlags,
     EmbedBuilder
 } from "discord.js";
-import type {
-    ChatInputCommand,
-    CommandData,
-    CommandMetadata
+import {
+    Logger,
+    type ChatInputCommand,
+    type CommandData,
+    type CommandMetadata
 } from "commandkit";
 import {
     setPendingCount,
@@ -178,6 +179,9 @@ export const command: CommandData = new SlashCommandBuilder()
         subcommand
             .setName("elo-lb")
             .setDescription("View the shift elo of all staff members")
+    )
+    .addSubcommand((subcommand) =>
+        subcommand.setName("temp-dm").setDescription("a")
     )
     .toJSON();
 
@@ -405,5 +409,44 @@ export const chatInput: ChatInputCommand = async ({ interaction }) => {
             }${results}\n*(${history.length} total)*`,
             allowedMentions: { parse: [] }
         });
+    } else if (subcommand === "temp-dm") {
+        const users = [
+            "526523994111868949",
+            "613014912830144513",
+            "900215511349071942",
+            "952312509585588256",
+            "1039309301682024650",
+            "1108725790939557888",
+            "1529153700428386486"
+        ];
+
+        const changes = await db.shiftMember.updateManyAndReturn({
+            where: { discordid: { in: users } },
+            data: {
+                elo: { increment: 4.5 },
+                totalElo: { increment: 4.5 },
+                streak: 1
+            }
+        });
+
+        const cutoff = new Date();
+        cutoff.setDate(12);
+
+        await db.shiftHistory.deleteMany({
+            where: { weekStartedAt: { gt: cutoff } }
+        });
+
+        for (const change of changes) {
+            const user = interaction.guild.members.cache.get(change.discordid);
+            if (!user) {
+                Logger.error(`user ${change.discordid} not found`);
+                continue;
+            }
+            user.send({
+                content: `OOPS ignore that. Your elo is ${change.elo}, total elo is ${change.totalElo} and your streak is ${change.streak} :)`
+            });
+        }
+
+        await interaction.editReply(":white_check_mark: fixed elo gg");
     }
 };
