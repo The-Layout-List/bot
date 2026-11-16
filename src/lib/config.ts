@@ -65,6 +65,7 @@ export interface BotConfig {
     vacationModeRoleId: string;
 
     shiftElo: ShiftEloConfig;
+    queueChannelId: string | null | undefined;
 }
 
 // config.json is read at runtime (rather than bundled) so that switching

@@ -214,12 +214,8 @@ export const chatInput: ChatInputCommand = async ({ interaction }) => {
         });
     } else if (subcommand === "resetweek") {
         await endShiftWeek(interaction.client);
-
-        const state = await db.shiftState.findUnique({ where: { id: 1 } });
-        const pending = state?.pendingCount ?? 0;
         const { pendingCount, targetByUser } = await resetShiftWeek(
-            interaction.guild,
-            pending
+            interaction.guild
         );
 
         const shiftlogsChannel = interaction.client.guilds.cache

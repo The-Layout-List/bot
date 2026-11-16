@@ -54,5 +54,6 @@
         "missedLoss": 4.5,
         "min": 0,
         "max": 35
-    }
+    },
+    "queueChannelId": null
 }

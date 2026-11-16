@@ -163,9 +163,7 @@ export async function applyShiftElo(client: Client): Promise<EloChange[]> {
     const changes: EloChange[] = [];
     for (const member of members) {
         const completed = member.currentCount >= member.targetCount;
-        const delta = completed
-            ? shiftElo.completedGain
-            : -shiftElo.missedLoss;
+        const delta = completed ? shiftElo.completedGain : -shiftElo.missedLoss;
         const newElo = clampElo(member.elo + delta);
         const newTotalElo = clampTotalElo(member.totalElo + delta);
         const newStreak = completed ? member.streak + 1 : 0;
@@ -272,12 +270,34 @@ export async function calculateTargetAssignments(guild: Guild) {
     return { pendingCount, targetByUser };
 }
 
-export async function resetShiftWeek(guild: Guild, pendingCount?: number) {
+async function refreshShiftState(guild: Guild) {
+    if (!config.queueChannelId) return;
+    const queueChannel = guild.channels.cache.get(config.queueChannelId);
+    if (!queueChannel?.viewable || !queueChannel?.isTextBased()) {
+        Logger.error(
+            `Failed to find queue channel with id ${config.queueChannelId}`
+        );
+        return;
+    }
+    const message = queueChannel.messages.cache.first();
+    if (!message) {
+        Logger.error(`Failed to find message in queue channel`);
+        return;
+    }
+    const queue = Number(message.content.split(":")[1].trim());
+
+    await db.shiftState.update({
+        where: { id: 1 },
+        data: { pendingCount: queue }
+    });
+    return;
+}
+
+export async function resetShiftWeek(guild: Guild) {
+    await refreshShiftState(guild);
+
     const state = await db.shiftState.findUnique({ where: { id: 1 } });
-    const totalPending = Math.max(
-        0,
-        Number(pendingCount || state?.pendingCount || 0)
-    );
+    const totalPending = Math.max(0, Number(state?.pendingCount || 0));
     const activeStaffIds = await getActiveStaffIds(guild);
     const { targetByUser } = await calculateTargetAssignments(guild);
     const weekStart = new Date();
@@ -334,7 +354,7 @@ export async function processShiftReminders(client: Client): Promise<string[]> {
             currentCount: { lt: db.shiftMember.fields.targetCount }
         }
     });
-    Logger.log(`Processing shift reminders for ${members.length} members.`)
+    Logger.log(`Processing shift reminders for ${members.length} members.`);
 
     for (const member of members) {
         if (!member.discordid) continue;
@@ -352,8 +372,10 @@ export async function processShiftReminders(client: Client): Promise<string[]> {
                     data: { reminder5Sent: true }
                 });
             } catch (e) {
-                Logger.error(`Failed to send reminder 5 to user ${member.discordid}`)
-                Logger.error(e)
+                Logger.error(
+                    `Failed to send reminder 5 to user ${member.discordid}`
+                );
+                Logger.error(e);
             }
         } else if (daysSinceStart >= 6 && !member.reminder6Sent) {
             try {
@@ -365,8 +387,10 @@ export async function processShiftReminders(client: Client): Promise<string[]> {
                     data: { reminder6Sent: true }
                 });
             } catch (e) {
-                Logger.error(`Failed to send reminder 6 to user ${member.discordid}`)
-                Logger.error(e)
+                Logger.error(
+                    `Failed to send reminder 6 to user ${member.discordid}`
+                );
+                Logger.error(e);
             }
         }
     }

@@ -1,5 +1,4 @@
 import { config } from "../../lib/config";
-import { db } from "../../lib/db";
 import { endShiftWeek, resetShiftWeek } from "../../lib/shiftSystem";
 import { scheduledTask } from "../../lib/tasks";
 
@@ -13,10 +12,7 @@ export default scheduledTask({
         if (!guild) return;
 
         await endShiftWeek(client);
-
-        const state = await db.shiftState.findUnique({ where: { id: 1 } });
-        const pending = state?.pendingCount ?? 0;
-        const { targetByUser } = await resetShiftWeek(guild, pending);
+        const { targetByUser } = await resetShiftWeek(guild);
 
         const shiftlogsChannel = guild.channels.cache.get(shiftLogsChannelId);
         if (shiftlogsChannel && shiftlogsChannel.isSendable()) {
