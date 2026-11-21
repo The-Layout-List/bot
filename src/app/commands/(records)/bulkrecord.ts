@@ -75,6 +75,20 @@ async function buildEmbed(moderatorID: string, page = 1) {
     return embed;
 }
 
+function buildButtons() {
+    const commit = new ButtonBuilder()
+        .setCustomId("commitAddBulkRecords")
+        .setLabel("Commit changes")
+        .setStyle(ButtonStyle.Success);
+
+    const denyAll = new ButtonBuilder()
+        .setCustomId("denyBulkRecords")
+        .setLabel("Deny all")
+        .setStyle(ButtonStyle.Danger);
+
+    return new ActionRowBuilder<ButtonBuilder>().addComponents(commit, denyAll);
+}
+
 export const command: CommandData = new SlashCommandBuilder()
     .setName("bulkrecord")
     .setDescription("Commands for adding records submitted with the Grind page")
@@ -340,13 +354,7 @@ export const chatInput: ChatInputCommand = async ({ interaction }) => {
 
         const embed = await buildEmbed(interaction.user.id);
 
-        // Create commit button
-        const commit = new ButtonBuilder()
-            .setCustomId("commitAddBulkRecords")
-            .setLabel("Commit changes")
-            .setStyle(ButtonStyle.Success);
-
-        const row = new ActionRowBuilder<ButtonBuilder>().addComponents(commit);
+        const row = buildButtons();
 
         return await interaction.editReply({
             content: "",
@@ -366,13 +374,7 @@ export const chatInput: ChatInputCommand = async ({ interaction }) => {
 
         const embed = await buildEmbed(interaction.user.id);
 
-        // Create commit button
-        const commit = new ButtonBuilder()
-            .setCustomId("commitAddBulkRecords")
-            .setLabel("Commit changes")
-            .setStyle(ButtonStyle.Success);
-
-        const row = new ActionRowBuilder<ButtonBuilder>().addComponents(commit);
+        const row = buildButtons();
 
         return await interaction.editReply({
             content: "",
@@ -456,13 +458,7 @@ export const chatInput: ChatInputCommand = async ({ interaction }) => {
 
         const embed = await buildEmbed(interaction.user.id, page);
 
-        // Create commit button
-        const commit = new ButtonBuilder()
-            .setCustomId("commitAddBulkRecords")
-            .setLabel("Commit changes")
-            .setStyle(ButtonStyle.Success);
-
-        const row = new ActionRowBuilder<ButtonBuilder>().addComponents(commit);
+        const row = buildButtons();
 
         return await interaction.editReply({
             content: "",
