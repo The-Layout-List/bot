@@ -1,5 +1,5 @@
 import {
-    ActionRowBuilder,
+    LabelBuilder,
     ModalBuilder,
     TextInputBuilder,
     TextInputStyle
@@ -18,18 +18,17 @@ export default {
 
         const denyReasonInput = new TextInputBuilder()
             .setCustomId("denyReasonInput")
-            .setLabel("Why was this record denied?")
             .setMinLength(1)
             .setMaxLength(1000)
             .setPlaceholder("Enter a deny reason")
             .setRequired(true)
             .setStyle(TextInputStyle.Short);
 
-        denyModal.addComponents(
-            new ActionRowBuilder<TextInputBuilder>().addComponents(
-                denyReasonInput
-            )
-        );
+        const denyReasonLabel = new LabelBuilder()
+            .setLabel("Why was this record denied?")
+            .setTextInputComponent(denyReasonInput);
+
+        denyModal.addLabelComponents(denyReasonLabel);
 
         await interaction.showModal(denyModal);
     }
