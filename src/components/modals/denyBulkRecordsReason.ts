@@ -34,7 +34,6 @@ export default {
         const guild = await interaction.client.guilds.fetch(guildId);
         const recordsChannel = getTextChannel(guild, archiveRecordsID);
 
-        // Same embed as /record deny, one per level
         const denyEmbeds = records.map((record) =>
             new EmbedBuilder()
                 .setColor(0xff0000)

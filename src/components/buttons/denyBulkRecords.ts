@@ -23,7 +23,7 @@ export default {
             .setStyle(TextInputStyle.Short);
 
         const denyReasonLabel = new LabelBuilder()
-            .setLabel("Why were these records denied?")
+            .setLabel("Deny reason")
             .setTextInputComponent(denyReasonInput);
 
         denyModal.addLabelComponents(denyReasonLabel);
