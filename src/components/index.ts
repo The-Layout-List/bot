@@ -8,8 +8,10 @@ import commitLevelToLegacy from "./buttons/commitLevelToLegacy";
 import commitMoveLevel from "./buttons/commitMoveLevel";
 import commitRecords from "./buttons/commitRecords";
 import deleteThread from "./buttons/deleteThread";
+import denyBulkRecords from "./buttons/denyBulkRecords";
 import denyRecord from "./buttons/denyRecord";
 import removeMessage from "./buttons/removeMessage";
+import denyBulkRecordsReason from "./modals/denyBulkRecordsReason";
 import denyReason from "./modals/denyReason";
 
 // Persistent components, routed by custom id from the interactionCreate event
@@ -23,11 +25,12 @@ export const buttons = new Collection<string, ButtonHandler>(
         commitMoveLevel,
         commitRecords,
         deleteThread,
+        denyBulkRecords,
         denyRecord,
         removeMessage
     ].map((button) => [button.customId, button])
 );
 
 export const modals = new Collection<string, ModalHandler>(
-    [denyReason].map((modal) => [modal.customId, modal])
+    [denyBulkRecordsReason, denyReason].map((modal) => [modal.customId, modal])
 );
