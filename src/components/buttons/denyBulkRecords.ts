@@ -16,7 +16,7 @@ export default {
 
         const denyReasonInput = new TextInputBuilder()
             .setCustomId("denyReasonInput")
-            .setLabel("Why were these records denied?")
+            .setLabel("Deny reason")
             .setMinLength(1)
             .setMaxLength(1000)
             .setPlaceholder("Enter a deny reason")
