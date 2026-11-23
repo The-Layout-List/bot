@@ -10,7 +10,7 @@ import {
     type CommandMetadata
 } from "commandkit";
 import {
-    setPendingCount,
+    refreshShiftState,
     resetShiftWeek,
     setCurrentProgress,
     processShiftReminders,
@@ -37,13 +37,7 @@ export const command: CommandData = new SlashCommandBuilder()
         subcommand
             .setName("setpending")
             .setDescription(
-                "Tell the bot how many records are pending at the start of the week"
-            )
-            .addIntegerOption((option) =>
-                option
-                    .setName("count")
-                    .setDescription("Pending record count")
-                    .setRequired(true)
+                "Refresh the weekly pending record count from the queue channel"
             )
     )
     .addSubcommand((subcommand) =>
@@ -203,11 +197,18 @@ export const chatInput: ChatInputCommand = async ({ interaction }) => {
             : undefined
     });
     if (subcommand === "setpending") {
-        const count = interaction.options.getInteger("count", true);
-        await setPendingCount(count);
-        return interaction.editReply({
-            content: `Weekly pending count set to ${count}.`
-        });
+        try {
+            const count = await refreshShiftState(interaction.guild);
+            return interaction.editReply({
+                content: `Weekly pending count refreshed: **${count}** pending records.`
+            });
+        } catch (error) {
+            return interaction.editReply({
+                content: `:x: Failed to refresh the pending count: ${
+                    error instanceof Error ? error.message : String(error)
+                }`
+            });
+        }
     } else if (subcommand === "resetweek") {
         await endShiftWeek(interaction.client);
         const { pendingCount, targetByUser } = await resetShiftWeek(

@@ -270,31 +270,42 @@ export async function calculateTargetAssignments(guild: Guild) {
     return { pendingCount, targetByUser };
 }
 
-async function refreshShiftState(guild: Guild) {
-    if (!config.queueChannelId) return;
+/**
+ * Reads the pending record count from the latest message in the queue channel
+ * and stores it as the weekly pending count. Throws if the count can't be read.
+ */
+export async function refreshShiftState(guild: Guild): Promise<number> {
+    if (!config.queueChannelId) {
+        throw new Error("No queue channel is configured");
+    }
     const queueChannel = guild.channels.cache.get(config.queueChannelId);
     if (!queueChannel?.viewable || !queueChannel?.isTextBased()) {
-        Logger.error(
+        throw new Error(
             `Failed to find queue channel with id ${config.queueChannelId}`
         );
-        return;
     }
-    const message = (await queueChannel.messages.fetch()).first();
+    const message = (await queueChannel.messages.fetch({ limit: 1 })).first();
     if (!message) {
-        Logger.error(`Failed to find message in queue channel`);
-        return;
+        throw new Error("Failed to find a message in the queue channel");
     }
-    const queue = Number(message.content.split(":")[1].trim());
+    const queue = Number(message.content.split(":")[1]?.trim());
+    if (!Number.isFinite(queue)) {
+        throw new Error(
+            `Failed to read the pending count from the queue message: "${message.content}"`
+        );
+    }
 
-    await db.shiftState.update({
-        where: { id: 1 },
-        data: { pendingCount: queue }
-    });
-    return;
+    const state = await setPendingCount(queue);
+    return state.pendingCount;
 }
 
 export async function resetShiftWeek(guild: Guild) {
-    await refreshShiftState(guild);
+    try {
+        await refreshShiftState(guild);
+    } catch (error) {
+        // Fall back to the previously stored pending count
+        Logger.error(`Failed to refresh pending count: ${error}`);
+    }
 
     const state = await db.shiftState.findUnique({ where: { id: 1 } });
     const totalPending = Math.max(0, Number(state?.pendingCount || 0));
