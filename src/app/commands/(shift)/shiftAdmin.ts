@@ -179,7 +179,6 @@ export const command: CommandData = new SlashCommandBuilder()
             .setName("elo-lb")
             .setDescription("View the shift elo of all staff members")
     )
-    .addSubcommand((subcommand) => subcommand.setName("temp-fix").setDescription("temp"))
     .toJSON();
 
 // Keep the reply under Discord's 2000 character message limit
@@ -402,21 +401,5 @@ export const chatInput: ChatInputCommand = async ({ interaction }) => {
             }${results}\n*(${history.length} total)*`,
             allowedMentions: { parse: [] }
         });
-    } else if (subcommand === "temp-fix") {
-        const channel = await interaction.client.guilds.cache
-            .get(staffGuildId)
-            ?.channels.fetch(config.shiftLogsChannelId);
-        if (channel?.isTextBased()) {
-            const message = await channel.messages.fetch("1574228037166309437");
-            if (message) {
-                await message.edit(
-                    `New shifts just dropped!!\n\n<@952312509585588256> - **1 records**\n<@613014912830144513> - **1 records**\n<@526523994111868949> - **1 records**\n<@900215511349071942> - **1 records**\n\nDue <t:1796000411:f>`
-                );
-            }
-        }
-
-        return await interaction.editReply(
-            `New shifts just dropped!!\n\n<@952312509585588256> - **1 records**\n<@613014912830144513> - **1 records**\n<@526523994111868949> - **1 records**\n<@900215511349071942> - **1 records**\n\nDue <t:1796000411:f>`
-        );
     }
 };
