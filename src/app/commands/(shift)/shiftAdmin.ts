@@ -179,7 +179,7 @@ export const command: CommandData = new SlashCommandBuilder()
             .setName("elo-lb")
             .setDescription("View the shift elo of all staff members")
     )
-    .addSubcommand((subcommand) => subcommand.setName("temp-fix"))
+    .addSubcommand((subcommand) => subcommand.setName("temp-fix").setDescription("temp"))
     .toJSON();
 
 // Keep the reply under Discord's 2000 character message limit
