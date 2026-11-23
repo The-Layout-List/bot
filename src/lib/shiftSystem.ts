@@ -279,7 +279,7 @@ async function refreshShiftState(guild: Guild) {
         );
         return;
     }
-    const message = queueChannel.messages.cache.first();
+    const message = (await queueChannel.messages.fetch()).first();
     if (!message) {
         Logger.error(`Failed to find message in queue channel`);
         return;
