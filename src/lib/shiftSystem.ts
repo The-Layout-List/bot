@@ -2,7 +2,7 @@ import type { Client, Guild } from "discord.js";
 import { config } from "./config";
 import { db } from "./db";
 import { shuffle } from "./utils";
-import { Logger } from "commandkit";
+import logger from "./logger";
 
 const {
     guildId,
@@ -190,8 +190,8 @@ export async function applyShiftElo(client: Client): Promise<EloChange[]> {
             const user = await client.users.fetch(member.discordid);
             await user.send(getEloDmMessage(change));
         } catch (e) {
-            Logger.error(`Failed to send elo DM to user ${member.discordid}`);
-            Logger.error(e);
+            logger.error(`Failed to send elo DM to user ${member.discordid}`);
+            logger.error(e);
         }
     }
 
@@ -365,7 +365,7 @@ export async function processShiftReminders(client: Client): Promise<string[]> {
             currentCount: { lt: db.shiftMember.fields.targetCount }
         }
     });
-    Logger.log(`Processing shift reminders for ${members.length} members.`);
+    logger.info(`Processing shift reminders for ${members.length} members.`);
 
     for (const member of members) {
         if (!member.discordid) continue;
@@ -383,10 +383,10 @@ export async function processShiftReminders(client: Client): Promise<string[]> {
                     data: { reminder5Sent: true }
                 });
             } catch (e) {
-                Logger.error(
+                logger.error(
                     `Failed to send reminder 5 to user ${member.discordid}`
                 );
-                Logger.error(e);
+                logger.error(e);
             }
         } else if (daysSinceStart >= 6 && !member.reminder6Sent) {
             try {
@@ -398,10 +398,10 @@ export async function processShiftReminders(client: Client): Promise<string[]> {
                     data: { reminder6Sent: true }
                 });
             } catch (e) {
-                Logger.error(
+                logger.error(
                     `Failed to send reminder 6 to user ${member.discordid}`
                 );
-                Logger.error(e);
+                logger.error(e);
             }
         }
     }
@@ -446,8 +446,8 @@ export async function endShiftWeek(client: Client) {
     try {
         await recordShiftHistory(activeStaffIds);
     } catch (e) {
-        Logger.error("Failed to record shift history");
-        Logger.error(e);
+        logger.error("Failed to record shift history");
+        logger.error(e);
     }
 
     const uncompletedShifts = await db.shiftMember.findMany({
