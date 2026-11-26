@@ -10,6 +10,7 @@ import { logger } from "../../lib/logger";
 import { config } from "../../lib/config";
 import { db, incrementDailyStat } from "../../lib/db";
 import { octokit, asFile } from "../../lib/github";
+import { addRecordToLevel } from "../../lib/recordDuplicates";
 import type { ButtonHandler } from "../types";
 
 const {
@@ -218,40 +219,21 @@ export default {
         // {fileRecord} is the record we're looping through, and
         // {record} is the current record we're trying to commit
 
-        let existing = false;
-        let updated = false;
-        // If duplicate, don't add it to githubCodes
-        for (const fileRecord of parsedData.records) {
-            if (fileRecord.user === record.username) {
-                logger.info(
-                    `Found existing record of ${filename} for ${record.username}`
-                );
-                if (fileRecord.percent < (record.percent ?? 0)) {
-                    logger.info(
-                        "This record has a greater percent on this level, updating..."
-                    );
-                    fileRecord.percent = record.percent ?? 0;
-                    fileRecord.enjoyment = record.enjoyment ?? undefined;
-                    fileRecord.link = record.completionlink ?? "";
-                    updated = true;
-                } else {
-                    logger.info(
-                        `Canceled adding duplicated record of ${filename} for ${record.username}`
-                    );
-                    existing = true;
-                }
-            }
-        }
+        // Removes the player's previous record if this one is better, or
+        // flags this record as a duplicate if it isn't
+        const addResult = addRecordToLevel(parsedData, newRecord);
+        if (addResult.status === "duplicate")
+            logger.info(
+                `Canceled adding duplicated record of ${filename} for ${record.username}`
+            );
+        else if (addResult.status === "replaced")
+            logger.info(
+                `Replacing ${record.username}'s ${addResult.previous.percent}% record on ${filename}`
+            );
+        const existing = addResult.status === "duplicate";
 
-        if (updated === true)
-            logger.log("This record has been updated, overwriting...");
-
-        // if the record does not already exist or existed but has been updated
-        if (existing === false || updated === true) {
-            // Add new record to the level's file if this is a new record (not an updated one)
-            if (updated === false)
-                parsedData.records = parsedData.records.concat(newRecord);
-
+        // if the record is not a duplicate (new, or better than the existing one)
+        if (existing === false) {
             // not sure why it needs to be done this way but :shrug:
             const changes = [];
             changes.push({
@@ -549,7 +531,7 @@ export default {
             return;
         } else {
             return await interaction.editReply(
-                `:x: This user already has a record on this level!`
+                `:x: This user already has a ${addResult.status === "duplicate" ? `${addResult.existing.percent}% ` : ""}record on this level!`
             );
         }
     }
