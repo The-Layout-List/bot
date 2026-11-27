@@ -304,7 +304,7 @@ export async function resetShiftWeek(guild: Guild) {
         await refreshShiftState(guild);
     } catch (error) {
         // Fall back to the previously stored pending count
-        Logger.error(`Failed to refresh pending count: ${error}`);
+        logger.error(`Failed to refresh pending count: ${error}`);
     }
 
     const state = await db.shiftState.findUnique({ where: { id: 1 } });
