@@ -17,6 +17,34 @@ import * as pako from "pako";
 import { logger } from "../../../lib/logger";
 import { db } from "../../../lib/db";
 import { commandGuilds } from "../../../lib/config";
+import { cloneOrPullRepo, localRepoPath } from "../../../lib/gitUtils";
+import {
+    findBlockingRecord,
+    readLocalLevel
+} from "../../../lib/recordDuplicates";
+
+interface GrindLevel {
+    name: string;
+    path: string;
+    percent: number;
+    enjoyment?: number | null;
+}
+
+/** Formats a list of skipped records, keeping the message under Discord's limit */
+function formatSkipped(skipped: string[]): string {
+    if (skipped.length === 0) return "";
+    const header = `:warning: Skipped ${skipped.length} duplicate record${skipped.length === 1 ? "" : "s"}:\n`;
+    let body = "";
+    for (let i = 0; i < skipped.length; i++) {
+        const line = `- ${skipped[i]}\n`;
+        if (header.length + body.length + line.length > 1800) {
+            body += `...and ${skipped.length - i} more`;
+            break;
+        }
+        body += line;
+    }
+    return header + body;
+}
 // Decompressed data passed to the function using Gzip
 function decompressData(compressedData: string) {
     const binaryString = atob(compressedData); // Decode base64
@@ -317,6 +345,59 @@ export const chatInput: ChatInputCommand = async ({ interaction }) => {
             );
         }
 
+        const playerName: string = parsedJson.name;
+        const levels: GrindLevel[] = Array.isArray(parsedJson.levels)
+            ? parsedJson.levels
+            : [];
+
+        // Filter out duplicate records: the player must not already have an
+        // equal or better record on the level, and the code itself may only
+        // contain one record per level (the best one is kept)
+        await interaction.editReply("Checking for duplicate records...");
+        await cloneOrPullRepo();
+
+        const kept = new Map<string, GrindLevel>();
+        const skipped: string[] = [];
+        for (const level of levels) {
+            const percent = Number(level.percent);
+
+            const sameLevel = kept.get(level.path);
+            if (sameLevel) {
+                if (sameLevel.percent >= percent) {
+                    skipped.push(
+                        `${level.name} ${percent}% (listed twice in the code, keeping ${sameLevel.percent}%)`
+                    );
+                    continue;
+                }
+                skipped.push(
+                    `${sameLevel.name} ${sameLevel.percent}% (listed twice in the code, keeping ${percent}%)`
+                );
+                kept.delete(level.path);
+            }
+
+            const levelData = readLocalLevel(localRepoPath, level.path);
+            const blocking = levelData
+                ? findBlockingRecord(levelData.records, playerName, percent)
+                : undefined;
+            if (blocking) {
+                skipped.push(
+                    `${level.name} ${percent}% (already has a ${blocking.percent}% record)`
+                );
+                continue;
+            }
+
+            kept.set(level.path, { ...level, percent });
+        }
+
+        if (kept.size === 0) {
+            return await interaction.editReply(
+                `:x: There are no new records to add for ${playerName}, every record in this code is a duplicate.\n${formatSkipped(skipped)}`.slice(
+                    0,
+                    2000
+                )
+            );
+        }
+
         await db.bulkRecordSession.deleteMany({
             where: {
                 moderatorID: interaction.user.id
@@ -332,7 +413,7 @@ export const chatInput: ChatInputCommand = async ({ interaction }) => {
         await db.bulkRecordSession.create({
             data: {
                 moderatorID: interaction.user.id,
-                playerName: parsedJson.name,
+                playerName: playerName,
                 video: video,
                 mobile: device == "Mobile" ? true : false,
                 note: note || null,
@@ -340,7 +421,7 @@ export const chatInput: ChatInputCommand = async ({ interaction }) => {
             }
         });
 
-        for (const level of parsedJson.levels) {
+        for (const level of kept.values()) {
             await db.bulkRecord.create({
                 data: {
                     moderatorID: interaction.user.id,
@@ -357,7 +438,7 @@ export const chatInput: ChatInputCommand = async ({ interaction }) => {
         const row = buildButtons();
 
         return await interaction.editReply({
-            content: "",
+            content: formatSkipped(skipped),
             embeds: [embed],
             components: [row]
         });
@@ -368,6 +449,7 @@ export const chatInput: ChatInputCommand = async ({ interaction }) => {
 
         await db.bulkRecord.deleteMany({
             where: {
+                moderatorID: interaction.user.id,
                 path: levelPath
             }
         });
@@ -430,6 +512,16 @@ export const chatInput: ChatInputCommand = async ({ interaction }) => {
         const percent = interaction.options.getInteger("percent");
         const enjoyment = interaction.options.getInteger("enjoyment");
 
+        const session = await db.bulkRecordSession.findFirst({
+            where: {
+                moderatorID: interaction.user.id
+            }
+        });
+        if (!session)
+            return await interaction.editReply(
+                ":x: You're not currently checking bulk records, start a session with /bulkrecord add"
+            );
+
         const dbLevel = await db.cachedLevel.findFirst({
             where: {
                 filename: levelPath
@@ -438,10 +530,49 @@ export const chatInput: ChatInputCommand = async ({ interaction }) => {
         if (!dbLevel)
             return await interaction.editReply(":x: That level doesn't exist!");
 
+        const newPercent = percent !== null ? percent : 0;
+
+        // Check the level file for an equal or better record
+        await cloneOrPullRepo();
+        const levelData = readLocalLevel(localRepoPath, dbLevel.filename);
+        const blocking = levelData
+            ? findBlockingRecord(
+                  levelData.records,
+                  session.playerName,
+                  newPercent
+              )
+            : undefined;
+        if (blocking)
+            return await interaction.editReply(
+                `:x: ${session.playerName} already has a ${blocking.percent}% record on ${dbLevel.name}!`
+            );
+
+        // Check the records already in this session
+        const sessionRecords = await db.bulkRecord.findMany({
+            where: {
+                moderatorID: interaction.user.id,
+                path: dbLevel.filename
+            }
+        });
+        const bestSessionRecord = sessionRecords.reduce<
+            (typeof sessionRecords)[number] | undefined
+        >(
+            (best, rec) => (!best || rec.percent > best.percent ? rec : best),
+            undefined
+        );
+        if (bestSessionRecord && bestSessionRecord.percent >= newPercent)
+            return await interaction.editReply(
+                `:x: This session already has a ${bestSessionRecord.percent}% record on ${dbLevel.name}!`
+            );
+        if (sessionRecords.length > 0)
+            await db.bulkRecord.deleteMany({
+                where: { id: { in: sessionRecords.map((rec) => rec.id) } }
+            });
+
         await db.bulkRecord.create({
             data: {
                 moderatorID: interaction.user.id,
-                percent: percent !== null ? percent : 0,
+                percent: newPercent,
                 enjoyment: enjoyment !== null ? enjoyment : 0,
                 path: dbLevel.filename,
                 levelname: dbLevel.name

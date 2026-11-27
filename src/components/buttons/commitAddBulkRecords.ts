@@ -3,12 +3,11 @@ import { getTextChannel } from "../../lib/discord";
 import { EmbedBuilder } from "discord.js";
 import { config } from "../../lib/config";
 import { logger } from "../../lib/logger";
-import fs from "node:fs";
-import path from "node:path";
 import { cloneOrPullRepo, localRepoPath } from "../../lib/gitUtils";
 import { incrementProgress } from "../../lib/shiftSystem";
 import { db, incrementDailyStat } from "../../lib/db";
 import { octokit } from "../../lib/github";
+import { addRecordToLevel, readLocalLevel } from "../../lib/recordDuplicates";
 import type { ButtonHandler } from "../types";
 
 const {
@@ -42,26 +41,27 @@ export default {
             }
         });
 
-        const changes: { path: string; content: string }[] = [];
         const errored: string[] = [];
+        const duplicates: string[] = [];
+        const committed: typeof records = [];
+        // Level files are cached so multiple records on the same level are
+        // merged into a single change
+        const levelFiles = new Map<string, ListLevel>();
 
         for (const record of records) {
-            let parsedData: ListLevel;
-            try {
-                parsedData = JSON.parse(
-                    fs.readFileSync(
-                        path.join(localRepoPath, `data/${record.path}.json`),
-                        "utf8"
-                    )
-                );
-            } catch (parseError) {
-                if (!record.path.startsWith("_"))
-                    logger.error(
-                        "Git - " +
-                            `Unable to parse data from ${record.path}.json:\n${parseError}`
-                    );
-                errored.push(record.path);
-                continue;
+            let parsedData = levelFiles.get(record.path);
+            if (!parsedData) {
+                const levelData = readLocalLevel(localRepoPath, record.path);
+                if (!levelData) {
+                    if (!record.path.startsWith("_"))
+                        logger.error(
+                            "Git - " +
+                                `Unable to parse data from ${record.path}.json`
+                        );
+                    errored.push(record.path);
+                    continue;
+                }
+                parsedData = levelData;
             }
 
             const recordToAdd: ListRecord = {
@@ -74,12 +74,48 @@ export default {
             if (record.enjoyment !== null && record.enjoyment !== undefined)
                 recordToAdd.enjoyment = record.enjoyment;
 
-            parsedData.records.push(recordToAdd);
+            const result = addRecordToLevel(parsedData, recordToAdd);
+            if (result.status === "duplicate") {
+                logger.info(
+                    `Canceled adding duplicated record of ${record.path} for ${session.playerName} (${record.percent}% <= ${result.existing.percent}%)`
+                );
+                duplicates.push(
+                    `${record.levelname} (already has ${result.existing.percent}%)`
+                );
+                continue;
+            }
+            if (result.status === "replaced")
+                logger.info(
+                    `Replacing ${session.playerName}'s ${result.previous.percent}% record on ${record.path} with ${record.percent}%`
+                );
 
-            changes.push({
-                path: `${githubDataPath}/${record.path}.json`,
-                content: JSON.stringify(parsedData, null, "\t")
+            levelFiles.set(record.path, parsedData);
+            committed.push(record);
+        }
+
+        const changes = [...levelFiles.entries()].map(([levelPath, data]) => ({
+            path: `${githubDataPath}/${levelPath}.json`,
+            content: JSON.stringify(data, null, "\t")
+        }));
+
+        if (changes.length === 0) {
+            await db.bulkRecordSession.deleteMany({
+                where: { moderatorID: interaction.user.id }
             });
+            await db.bulkRecord.deleteMany({
+                where: { moderatorID: interaction.user.id }
+            });
+            return await interaction.editReply(
+                `:x: No records were added, every record was a duplicate or failed to be read.${
+                    duplicates.length > 0
+                        ? `\nDuplicates: ${duplicates.join(", ")}`
+                        : ""
+                }${
+                    errored.length > 0
+                        ? `\nErrored: ${errored.map((p) => `${p}.json`).join(", ")}`
+                        : ""
+                }`.slice(0, 2000)
+            );
         }
 
         let commitSha;
@@ -220,33 +256,29 @@ export default {
             await db.staff.create({
                 data: {
                     moderator: interaction.user.id,
-                    nbRecords: records.length,
+                    nbRecords: committed.length,
                     nbDenied: 0,
-                    nbAccepted: records.length
+                    nbAccepted: committed.length
                 }
             });
         } else {
             await db.staff.update({
                 where: { id: modInfo.id },
-                data: { nbRecords: { increment: records.length } }
+                data: { nbRecords: { increment: committed.length } }
             });
             await db.staff.update({
                 where: { id: modInfo.id },
-                data: { nbAccepted: { increment: records.length } }
+                data: { nbAccepted: { increment: committed.length } }
             });
         }
 
-        await incrementDailyStat(
-            "nbRecordsAccepted",
-            records.length - errored.length
-        );
+        await incrementDailyStat("nbRecordsAccepted", committed.length);
 
         await incrementProgress(interaction.user.id, 1);
 
         const recordEmbeds: EmbedBuilder[] = [];
 
-        for (const record of records) {
-            if (errored.includes(record.path)) continue;
+        for (const record of committed) {
             // Create embed to send in public channel
             const publicEmbed = new EmbedBuilder()
                 .setColor(0x8fce00)
@@ -334,13 +366,22 @@ export default {
             }
         }
 
-        if (errored.length > 0) {
-            await interaction.editReply(
-                `:white_check_mark: Added records, but some records failed to be added:\n${errored.map((path) => `${path}.json`).join(", ")}`
+        const problems: string[] = [];
+        if (duplicates.length > 0)
+            problems.push(
+                `Skipped duplicate records: ${duplicates.join(", ")}`
             );
-        } else {
-            await interaction.editReply(":white_check_mark: Added records!");
-        }
+        if (errored.length > 0)
+            problems.push(
+                `Some records failed to be added: ${errored.map((path) => `${path}.json`).join(", ")}`
+            );
+
+        await interaction.editReply(
+            (problems.length > 0
+                ? `:white_check_mark: Added ${committed.length} records, but:\n${problems.join("\n")}`
+                : ":white_check_mark: Added records!"
+            ).slice(0, 2000)
+        );
 
         await db.bulkRecordSession.deleteMany({
             where: {

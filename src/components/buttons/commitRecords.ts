@@ -4,6 +4,7 @@ import { db } from "../../lib/db";
 import { config } from "../../lib/config";
 import { logger } from "../../lib/logger";
 import { octokit, asFile } from "../../lib/github";
+import { addRecordToLevel } from "../../lib/recordDuplicates";
 import type { ButtonHandler } from "../types";
 
 const { githubOwner, githubRepo, githubDataPath, githubBranch } = config;
@@ -82,7 +83,7 @@ export default {
         }
         // Patching together different records for the same file
         interaction.editReply("Looking for duplicate records...");
-        const newContent: Record<string, ListRecord[]> = {};
+        const changedFiles = new Set<string>();
         for (const record of recordsToCommit) {
             const filename = record.filename;
             const githubCode = record.githubCode;
@@ -90,25 +91,6 @@ export default {
 
             if (!previousContent[filename]) {
                 erroredRecords.push(`${filename}.json (${user})`);
-                interaction.editReply(
-                    `Found ${duplicateRecords} duplicate and ${erroredRecords.length} errored records...`
-                );
-                continue;
-            }
-
-            // If duplicate, don't add it to githubCodes
-            if (
-                previousContent[filename].records.some(
-                    (fileRecord) => fileRecord.user == user
-                )
-            ) {
-                logger.info(
-                    `Canceled adding duplicated record of ${filename} for ${user}`
-                );
-                await db.recordToCommit.deleteMany({
-                    where: { id: record.id }
-                });
-                duplicateRecords++;
                 interaction.editReply(
                     `Found ${duplicateRecords} duplicate and ${erroredRecords.length} errored records...`
                 );
@@ -129,46 +111,44 @@ export default {
                 continue;
             }
 
-            // If there's no attribute for that file yet, add it, otherwise concatenate it after the last one
-            if (!newContent[filename]) {
-                newContent[filename] = [newRecord];
-            } else {
-                if (
-                    newContent[filename].some(
-                        (fileRecord) => fileRecord.user === user
-                    )
-                ) {
-                    logger.info(
-                        `Canceled adding duplicated record of ${filename} for ${user}`
-                    );
-                    await db.recordToCommit.deleteMany({
-                        where: { id: record.id }
-                    });
-                    duplicateRecords++;
-                    interaction.editReply(
-                        `Found ${duplicateRecords} duplicate and ${erroredRecords.length} errored records...`
-                    );
-                    continue;
-                }
-                newContent[filename].push(newRecord);
+            // Duplicates (equal or lower percent than the player's existing
+            // record) are dropped; better records replace the existing one
+            // and are added to the bottom
+            const result = addRecordToLevel(
+                previousContent[filename],
+                newRecord
+            );
+            if (result.status === "duplicate") {
+                logger.info(
+                    `Canceled adding duplicated record of ${filename} for ${newRecord.user}`
+                );
+                await db.recordToCommit.deleteMany({
+                    where: { id: record.id }
+                });
+                duplicateRecords++;
+                interaction.editReply(
+                    `Found ${duplicateRecords} duplicate and ${erroredRecords.length} errored records...`
+                );
+                continue;
             }
+            if (result.status === "replaced")
+                logger.info(
+                    `Replacing ${newRecord.user}'s ${result.previous.percent}% record on ${filename}`
+                );
+
+            changedFiles.add(filename);
+            addedRecords++;
         }
 
         interaction.editReply("Building changes...");
 
         const changes: { path: string; content: string }[] = [];
         // Creating changed data
-        for (const filename of Object.keys(newContent)) {
-            // Patching previouw and new content together
-            const content = previousContent[filename];
-            content.records = content.records.concat(newContent[filename]);
-
-            // Save changes
+        for (const filename of changedFiles) {
             changes.push({
                 path: githubDataPath + `/${filename}.json`,
-                content: JSON.stringify(content, null, "\t")
+                content: JSON.stringify(previousContent[filename], null, "\t")
             });
-            addedRecords += newContent[filename].length;
         }
 
         if (changes.length === 0) {

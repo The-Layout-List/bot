@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { config } from "./config";
 import { db } from "./db";
+import { simpleGit } from "simple-git";
 import { git } from "./github";
 import { logger } from "./logger";
 
@@ -14,21 +15,47 @@ export interface ParsedLevel {
     filename: string;
 }
 
-export async function cloneOrPullRepo(): Promise<void | -1> {
-    try {
-        const { githubOwner, githubRepo } = config;
+async function cloneRepo(remoteUrl: string, branch: string): Promise<void> {
+    logger.info(
+        "Git - " +
+            "Cloning the repository for the first time, this may take a while..."
+    );
+    await git.clone(remoteUrl, localRepoPath, ["--branch", branch]);
+}
 
+/**
+ * Makes the local clone an exact copy of the configured branch on GitHub.
+ * The bot never commits to the local clone (all writes go through the GitHub
+ * API), so instead of pulling (which fails when the remote history was reset
+ * or force-pushed), local state is discarded and replaced with the remote's.
+ */
+async function syncRepo(remoteUrl: string, branch: string): Promise<void> {
+    const repo = simpleGit(localRepoPath);
+    // Follow config changes (e.g. switching between the real and test repo)
+    await repo.remote(["set-url", "origin", remoteUrl]);
+    await repo.fetch("origin", branch);
+    await repo.raw(["checkout", "--force", "-B", branch, "FETCH_HEAD"]);
+    await repo.clean("f", ["-d"]);
+}
+
+export async function cloneOrPullRepo(): Promise<void | -1> {
+    const { githubOwner, githubRepo, githubBranch } = config;
+    const remoteUrl = `https://github.com/${githubOwner}/${githubRepo}.git`;
+    try {
         if (!fs.existsSync(localRepoPath)) {
-            logger.info(
+            await cloneRepo(remoteUrl, githubBranch);
+            return;
+        }
+        try {
+            await syncRepo(remoteUrl, githubBranch);
+        } catch (syncError) {
+            // The local clone is broken (e.g. a half-finished clone), start over
+            logger.warn(
                 "Git - " +
-                    "Cloning the repository for the first time, this may take a while..."
+                    `Couldn't update the local repository, re-cloning it:\n${syncError}`
             );
-            await git.clone(
-                `https://github.com/${githubOwner}/${githubRepo}.git`,
-                localRepoPath
-            );
-        } else {
-            await git.cwd(localRepoPath).pull();
+            fs.rmSync(localRepoPath, { recursive: true, force: true });
+            await cloneRepo(remoteUrl, githubBranch);
         }
     } catch (error) {
         logger.error("Git - " + `Error updating the repository:\n${error}`);

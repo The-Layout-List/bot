@@ -27,6 +27,7 @@ import { octokit, asFile } from "../../../lib/github";
 import path from "node:path";
 import fs from "node:fs";
 import { cloneOrPullRepo, localRepoPath } from "../../../lib/gitUtils";
+import { addRecordToLevel } from "../../../lib/recordDuplicates";
 
 const {
     archiveRecordsID,
@@ -525,32 +526,18 @@ export const chatInput: ChatInputCommand = async ({ interaction }) => {
             (device == "Mobile" ? ',\n\t\t"mobile": true\n}\n' : "\n}");
         const newRecord = JSON.parse(githubCode);
 
-        let existing = false;
-        let updated = false;
-        // If duplicate, don't add it to githubCodes
-        for (const fileRecord of parsedData.records) {
-            if (fileRecord.user === user.name) {
-                logger.info(
-                    `Found existing record of ${filename} for ${user.name}`
-                );
-                if (fileRecord.percent < percent) {
-                    logger.info(
-                        "This record has a greater percent on this level, updating..."
-                    );
-                    fileRecord.percent = percent;
-                    fileRecord.enjoyment = enjoyment ?? undefined;
-                    fileRecord.link = linkStr;
-                    updated = true;
-                } else {
-                    logger.info(
-                        `Canceled adding duplicated record of ${filename} for ${user.name}`
-                    );
-                    // TODO: this doesnt work
-                    // await db.acceptedRecord.deleteMany({ where: { id: record.id } });
-                    existing = true;
-                }
-            }
-        }
+        // Removes the player's previous record if this one is better, or
+        // flags this record as a duplicate if it isn't
+        const addResult = addRecordToLevel(parsedData, newRecord);
+        if (addResult.status === "duplicate")
+            logger.info(
+                `Canceled adding duplicated record of ${filename} for ${user.name}`
+            );
+        else if (addResult.status === "replaced")
+            logger.info(
+                `Replacing ${user.name}'s ${addResult.previous.percent}% record on ${filename}`
+            );
+        const existing = addResult.status === "duplicate";
 
         await interaction.editReply(`Writing code...`);
 
@@ -601,10 +588,10 @@ export const chatInput: ChatInputCommand = async ({ interaction }) => {
 
         await interaction.editReply("Adding record...");
 
-        // if the record does not already exist or existed but has been updated
-        if (existing === true && updated === false) {
+        // if the record is a duplicate (the player already has an equal or better record)
+        if (existing) {
             return await interaction.editReply(
-                `:x: This user already has a record on this level!`
+                `:x: This user already has a ${addResult.status === "duplicate" ? `${addResult.existing.percent}% ` : ""}record on this level!`
             );
         }
         // Accepting a record //
@@ -644,10 +631,6 @@ export const chatInput: ChatInputCommand = async ({ interaction }) => {
         }
 
         await interaction.editReply("Committing...");
-        // Add new record to the level's file if this is a new record (not an updated one)
-        if (updated === false)
-            parsedData.records = parsedData.records.concat(newRecord);
-
         // not sure why it needs to be done this way but :shrug:
         const changes = [];
         changes.push({
@@ -1090,37 +1073,23 @@ export const chatInput: ChatInputCommand = async ({ interaction }) => {
         // {fileRecord} is the record we're looping through, and
         // {record} is the current record we're trying to commit
 
-        let existing = false;
-        let updated = false;
-        // If duplicate, don't add it to githubCodes
-        for (const fileRecord of parsedData.records) {
-            if (fileRecord.user === user.name) {
-                logger.info(
-                    `Found existing record of ${filename} for ${user.name}`
-                );
-                if (fileRecord.percent < (newPercent ?? 0)) {
-                    logger.info(
-                        "This record has a greater percent on this level, updating..."
-                    );
-                    fileRecord.percent = newPercent ?? 0;
-                    fileRecord.enjoyment = newEnjoyment ?? undefined;
-                    fileRecord.link = oldRecord.completionlink ?? "";
-                    updated = true;
-                } else {
-                    logger.info(
-                        `Canceled adding duplicated record of ${filename} for ${user.name}`
-                    );
-                    // todo: what the flip
-                    // await db.acceptedRecord.deleteMany({ where: { id: record.id } });
-                    existing = true;
-                }
-            }
-        }
+        // Removes the player's previous record if this one is better, or
+        // flags this record as a duplicate if it isn't
+        const addResult = addRecordToLevel(parsedData, newRecord);
+        if (addResult.status === "duplicate")
+            logger.info(
+                `Canceled adding duplicated record of ${filename} for ${user.name}`
+            );
+        else if (addResult.status === "replaced")
+            logger.info(
+                `Replacing ${user.name}'s ${addResult.previous.percent}% record on ${filename}`
+            );
+        const existing = addResult.status === "duplicate";
 
-        // if the record does not already exist or existed but has been updated
-        if (existing === true && updated === false) {
+        // if the record is a duplicate (the player already has an equal or better record)
+        if (existing) {
             return await interaction.editReply(
-                `:x: This user already has a record on this level!`
+                `:x: This user already has a ${addResult.status === "duplicate" ? `${addResult.existing.percent}% ` : ""}record on this level!`
             );
         }
 
@@ -1155,10 +1124,6 @@ export const chatInput: ChatInputCommand = async ({ interaction }) => {
         }
 
         await interaction.editReply("Committing...");
-        // Add new record to the level's file if this is a new record (not an updated one)
-        if (updated === false)
-            parsedData.records = parsedData.records.concat(newRecord);
-
         const changes = [];
         changes.push({
             path: githubDataPath + `/${filename}.json`,
